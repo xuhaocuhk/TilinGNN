@@ -30,8 +30,8 @@ class ML_Solver(BaseSolver):
         self.random_network = deepcopy(self.network)
         self.num_prob_maps = num_prob_maps
 
-    def predict(self, brick_layout : BrickLayout, random_network = False):
-        if len(brick_layout.collide_edge_index) == 0:  # only nodes left, select them all
+    def predict(self, brick_layout : BrickLayout):
+        if len(brick_layout.collide_edge_index) == 0:  # only collision edges left, select them all
             # print("empty edges!")
             return np.ones((brick_layout.node_feature.shape[0], self.num_prob_maps))
         elif len(brick_layout.align_edge_index) == 0:
@@ -60,9 +60,6 @@ class ML_Solver(BaseSolver):
                 input("network output is None!!!")
                 return None
 
-            if random_network:
-                probs = torch.rand_like(probs)
-
             return probs.detach().cpu().numpy()
 
     def get_unsupervised_losses_from_layout(self, brick_layout, probs):
@@ -74,7 +71,7 @@ class ML_Solver(BaseSolver):
         return losses
 
     def solve(self, brick_layout : BrickLayout, intermediate_results_dir = None):
-        output_solution, score, predict_order = algorithms.solve_by_probablistic_greedy(self, tree_search_layout_dir=intermediate_results_dir)
+        output_solution, score, predict_order = algorithms.solve_by_probablistic_greedy(self, brick_layout, tree_search_layout_dir=intermediate_results_dir)
 
         output_layout = deepcopy(brick_layout)
         output_layout.predict_order = predict_order

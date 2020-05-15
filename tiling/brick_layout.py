@@ -48,7 +48,6 @@ class BrickLayout():
         for k, v in self.re_index.items():
             self.inverse_index[v] = k
 
-        self.ground_truth = ground_truth #TODO: remove it
         self.predict = np.zeros(len(self.node_feature))
         self.predict_probs = []
         self.predict_order = []
@@ -60,7 +59,6 @@ class BrickLayout():
     def __deepcopy__(self, memo):
         new_inst = type(self).__new__(self.__class__)  # skips calling __init__
         new_inst.complete_graph = self.complete_graph
-        new_inst.debugger = self.debugger
         new_inst.node_feature = self.node_feature
         new_inst.collide_edge_index = self.collide_edge_index
         new_inst.collide_edge_features = self.collide_edge_features
@@ -422,7 +420,7 @@ class BrickLayout():
         for i in range(node_feature.shape[0]):
             fixed_re_index[self.inverse_index[node_inverse_index[i]]] = i
 
-        return BrickLayout(self.debugger, complete_graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, None, fixed_re_index, target_polygon=self.target_polygon), node_inverse_index
+        return BrickLayout(complete_graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, None, fixed_re_index, target_polygon=self.target_polygon), node_inverse_index
 
     def build_graph_from_prediction(self):
 

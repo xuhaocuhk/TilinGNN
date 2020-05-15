@@ -24,6 +24,4 @@ pip install PyQt5
 We have the following entries to experiment our project:
 - UI interface.
 - using our pre-trained models (or IP solver) to tile a given region using a given tile set.
-- train a new model
-- create superset of candidate tile placement
-- 
+- train a new model (create new tileset, including new superset, generate training data, then training)

@@ -27,58 +27,49 @@ def tiling_a_region():
     solver = ML_Solver(debugger, device, environment.complete_graph, None, num_prob_maps= 1)
     solver.load_saved_network(config.network_path)
 
-    # select a silhouette as a tiling region
+    ##### select a silhouette as a tiling region
     silhouette_path = r'./silhouette/bunny.txt'
     silhouette_file_name = os.path.basename(silhouette_path)
     exterior_contour, interior_contours = load_polygons(silhouette_path)
 
-    # plot the tiling region
+    ##### plot the select tiling region
     base_polygon = Polygon(exterior_contour, holes=interior_contours)
     exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(base_polygon, show_line=True)
     plotter.draw_contours(debugger.file_path(f'tiling_region_{silhouette_file_name[:-4]}.png'),
         exteriors_contour_list + interiors_list)
 
-
+    ##### get candidate tile placements inside the tiling region by cropping
     cropped_brick_layouts = crop_multiple_layouts_from_contour(exterior_contour, interior_contours, environment.complete_graph,
-                                                              start_angle=0, end_angle=30, num_of_angle=3,
+                                                              start_angle=0, end_angle=30, num_of_angle=1,
                                                               movement_delta_ratio=[0, 0.5], margin_padding_ratios=[0.5])
 
-    # show the cropped tile placements
+    ##### show the cropped tile placements
     for idx, (brick_layout, coverage) in enumerate(cropped_brick_layouts):
         brick_layout.show_candidate_tiles(plotter, debugger, f"candi_tiles_{idx}_{coverage}.png")
 
-    # create saving path
-    save_path = debugger.file_path(silhouette_file_name)
-    os.mkdir(save_path)
-    objs_path = os.path.join(save_path, 'objs')
-
     # tiling solving
-    for idx, result_brick_layout in enumerate(cropped_brick_layouts):
-        trial_scores = []
-        trial_layouts = []
-        for trial_idx in range(20):
-            result_brick_layout, score = solver.solve(result_brick_layout)
-            trial_scores.append(score)
-            trial_layouts.append(result_brick_layout)
+    solutions = []
+    for idx, (result_brick_layout, coverage) in enumerate(cropped_brick_layouts):
+        result_brick_layout, score = solver.solve(result_brick_layout)
+        solutions.append((result_brick_layout, score))
 
-    # TODO pick the best one
-    for trial_idx, layout in trial_layouts:
+    for solved_layout in solutions:
         has_hole = result_brick_layout.detect_holes()
-
+        solved_layout[0]
+        # TODO:
+        #  1. save brick layout here
+        #  2. make sure the following things are stored in bricklayout: 1) the input tiling region 2) the tiling order 3) the probabilities 4) the graph visualization function
+        #  3. the brick layout are saved in a light-weight manner, and restore them when reload them.
         result_brick_layout.show_predict(plotter, debugger, debugger.file_path(f'{score}_{idx}_{trial_idx}_predict.png'))
         result_brick_layout.show_super_contour(plotter, debugger.file_path(f'{score}_{idx}_{trial_idx}_super_contour.png'))
+        visual_brick_layout_graph(result_brick_layout, os.path.join(save_path, f'{score}_{idx}_{trial_idx}_vis_graph.png'))
 
-        visual_brick_layout_graph(result_brick_layout, os.path.join(save_path,
-                                                                    f'{score}_{idx}_{trial_idx}_vis_graph.png'))
-
-        if config.save_objs and (len(interior_contours) > 0 or not has_hole):
-            result_brick_layout.save_predict_as_objs(os.path.join(objs_path, f"{score}_{idx}_{trial_idx}_objs"), file_name="tile")
 
 
 
 def init():
     MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
-    debugger = MyDebugger(f"tiling", fix_rand_seed=config.rand_seed,
+    debugger = MyDebugger(f"region_tiling", fix_rand_seed=config.rand_seed,
                           save_print_to_file=False)
     plotter = Plotter()
     return debugger, plotter
