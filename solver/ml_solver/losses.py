@@ -166,7 +166,7 @@ class Losses:
     @staticmethod
     def solution_score(predict, brick_layout):
         predict = torch.from_numpy(np.array(predict)).float().to(device)
-        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt = \
+        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
             brick_layout.get_data_as_torch_tensor(device)
 
         ######## calculate total area

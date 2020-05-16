@@ -25,17 +25,17 @@ EPS = 1e-5
 
 
 
-def gen_one_train_data(plotter, graph: TileGraph, low, high):
+def gen_one_testing_data(plotter, graph: TileGraph, low, high):
     target = graph.gen_target_tiles(low=low, high=high)
 
     # getting sub-graph from data
     super_tiles, filtered_collided_edges, filtered_adj_edges = compute_super_graph(graph, target)
 
     # get the data for brick_layout
-    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index = \
-        generate_brick_layout_data(graph, super_tiles, filtered_collided_edges, filtered_adj_edges, target)
+    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = \
+        generate_brick_layout_data(graph, super_tiles, filtered_collided_edges, filtered_adj_edges)
 
-    return node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index
+    return node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index
 
 
 def compute_super_graph(graph: TileGraph, generated_target):
@@ -67,10 +67,10 @@ def create_brick_layout_from_polygon(graph: TileGraph, polygon : Polygon):
     tiles_super_set, filtered_collided_edges, filtered_adj_edges = get_all_placement_in_polygon(graph, polygon)
 
     # produce data needed
-    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index = \
-        generate_brick_layout_data(graph, tiles_super_set, filtered_collided_edges, filtered_adj_edges, [])
+    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = \
+        generate_brick_layout_data(graph, tiles_super_set, filtered_collided_edges, filtered_adj_edges)
 
-    return node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index
+    return node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index
 
 def get_graph_bound(graph : TileGraph):
     tiles = [ np.array(t.tile_poly.exterior.coords) for t in graph.tiles]
@@ -105,7 +105,7 @@ def generate_random_inputs(graph: TileGraph, max_vertices : float = 10, low = 0.
                 assert debugger is not None
                 plotter.draw_contours(debugger.file_path('generated_shape.png'), [('green', np.array(vertices))])
 
-            node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index = \
+            node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = \
                 create_brick_layout_from_polygon(graph, polygon)
 
             assert len(node_feature.shape) > 0
@@ -116,7 +116,7 @@ def generate_random_inputs(graph: TileGraph, max_vertices : float = 10, low = 0.
 
             target = None
 
-            return node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index
+            return node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index
         except Exception as e:
             # print(traceback.format_exc())
             continue
@@ -192,7 +192,7 @@ def crop_multiple_layouts_from_contour(exterior_contour, interior_contours, comp
                                                                 x_delta,
                                                                 y_delta)
                 try:
-                    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index = \
+                    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = \
                         create_brick_layout_from_polygon(complete_graph, target_polygon)
                 except:
                     print(traceback.format_exc())
@@ -204,7 +204,7 @@ def crop_multiple_layouts_from_contour(exterior_contour, interior_contours, comp
 
                 brick_layout = tiling.brick_layout.BrickLayout(complete_graph, node_feature,
                                                                collide_edge_index, collide_edge_features, align_edge_index,
-                                                               align_edge_features, target, re_index, target_polygon = target_polygon)
+                                                               align_edge_features, re_index, target_polygon = target_polygon)
                 # initialize selection probability
                 brick_layout.predict_probs = [0.5 for i in range(brick_layout.node_feature.shape[0])]
 
@@ -472,11 +472,11 @@ def recover_bricklayout_from_redix_file(re_index_path, debugger, complete_graph)
                                edge[0] in tiles_super_set and edge[1] in tiles_super_set]
     filtered_adj_edges = [edge for edge in complete_graph.adj_edges if
                                edge[0] in tiles_super_set and edge[1] in tiles_super_set]
-    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, new_re_index = \
-        generate_brick_layout_data(complete_graph, tiles_super_set, filtered_collided_edges, filtered_adj_edges, [])
+    node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, new_re_index = \
+        generate_brick_layout_data(complete_graph, tiles_super_set, filtered_collided_edges, filtered_adj_edges)
 
     output_layout = tiling.brick_layout.BrickLayout(debugger, complete_graph, node_feature, collide_edge_index,
-                               collide_edge_features, align_edge_index, align_edge_features, target, new_re_index)
+                               collide_edge_features, align_edge_index, align_edge_features, new_re_index)
 
     for key, item in new_re_index.items():
         assert re_index[key] == item

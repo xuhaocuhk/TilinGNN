@@ -175,8 +175,8 @@ class Trainer():
     @staticmethod
     def _create_one_data(data):
         graph, data_path, low, high, max_vertices, index = data
-        node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, \
-        target, re_index = factory.generate_random_inputs(graph, max_vertices, low=low, high=high)
+        node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features,\
+        re_index = factory.generate_random_inputs(graph, max_vertices, low=low, high=high)
         # write the file to a pkl file
         assert len(collide_edge_index) > 0
         assert len(align_edge_index) > 0
@@ -187,7 +187,6 @@ class Trainer():
                                 collide_edge_features=collide_edge_features,
                                 align_edge_index=align_edge_index,
                                 align_edge_features=align_edge_features,
-                                target=target,
                                 re_index=re_index,
                                 prefix=data_path,
                                 predict=None,

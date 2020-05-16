@@ -462,7 +462,7 @@ class DrawerWidgets(QMainWindow):
 
 
         try:
-            node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, target, re_index = \
+            node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = \
                 factory.create_brick_layout_from_polygon(self.complete_graph, target_polygon)
         except:
             print(traceback.format_exc())
@@ -472,11 +472,11 @@ class DrawerWidgets(QMainWindow):
         export_contour_as_text(self.debugger.file_path(f'contour_{self.brick_layout_cnt}.txt'), (self.current_polygon_exterior, self.current_polygon_interiors))
 
 
-        self.current_brick_layout = BrickLayout(self.debugger, self.complete_graph, node_feature, collide_edge_index,
+        self.current_brick_layout = BrickLayout(self.complete_graph, node_feature, collide_edge_index,
                                                 collide_edge_features,
-                                                align_edge_index, align_edge_features, target, re_index, target_polygon = target_polygon)
+                                                align_edge_index, align_edge_features, re_index, target_polygon = target_polygon)
 
-        factory.save_all_layout_info(file_prefix, self.current_brick_layout, self.debugger.file_path('./'), target_polygon, with_features = False)
+        factory.save_all_layout_info(file_prefix, self.current_brick_layout, self.debugger.file_path('./'), with_features = False)
 
         # visual_brick_layout_graph(brick_layout = self.current_brick_layout, save_path = self.debugger.file_path('./graph.png'))
         self.brick_layout_cnt += 1
@@ -593,7 +593,7 @@ if __name__ == "__main__":
     data_env.load_complete_graph(config.complete_graph_size)
 
     solver = ML_Solver(debugger, device, data_env.complete_graph, None, num_prob_maps = 1)
-    solver.load_saved_network(config.network_path, evaluation=False)
+    solver.load_saved_network(config.network_path)
 
     app = QApplication(sys.argv)
     draw = DrawerWidgets(data_env.complete_graph, debugger, plotter, solver, app)

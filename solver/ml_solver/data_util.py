@@ -29,10 +29,13 @@ class GraphDataset(Dataset):
     def process(self):
         print("processing the data...")
         for i, raw_path in enumerate(self.raw_paths):
-            _, x, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, y, *_ = load_brick_layout_data(raw_path)
+            _, x, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, *_ = load_brick_layout_data(raw_path)
 
-            x, align_edge_index, align_edge_features, collide_edge_index, collide_edge_features, y = \
-                to_torch_tensor(torch.device('cpu'), x, align_edge_index, align_edge_features, collide_edge_index, collide_edge_features, y)
+            x, align_edge_index, align_edge_features, collide_edge_index, collide_edge_features = \
+                to_torch_tensor(torch.device('cpu'), x, align_edge_index, align_edge_features, collide_edge_index, collide_edge_features)
+
+            ## dummy target
+            y = torch.from_numpy(np.array([])).float().to(torch.device('cpu'))
 
             data = Data(x=x,
                         y=y,

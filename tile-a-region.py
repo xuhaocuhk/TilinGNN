@@ -12,7 +12,7 @@ from solver.ml_solver.ml_solver import ML_Solver
 from inputs.env import Environment
 from inputs import config
 import torch.multiprocessing as mp
-from util.data_util import load_bricklayout
+from util.data_util import load_bricklayout, write_bricklayout
 from shapely.geometry import Polygon
 from tiling.brick_layout import BrickLayout
 
@@ -53,15 +53,30 @@ def tiling_a_region():
         result_brick_layout, score = solver.solve(result_brick_layout)
         solutions.append((result_brick_layout, score))
 
-    for solved_layout in solutions:
+    for idx, solved_layout in enumerate(solutions):
         has_hole = result_brick_layout.detect_holes()
-        solved_layout[0]
+        result_brick_layout, score = solved_layout
         # TODO:
         #  1. save brick layout here
         #  2. make sure the following things are stored and implemented in bricklayout: 1) the input tiling region 2) the tiling order in algorithm 1 3) the probabilities 4) the graph visualization function
-        result_brick_layout.show_predict(plotter, debugger, debugger.file_path(f'{score}_{idx}_{trial_idx}_predict.png'))
-        result_brick_layout.show_super_contour(plotter, debugger.file_path(f'{score}_{idx}_{trial_idx}_super_contour.png'))
-        visual_brick_layout_graph(result_brick_layout, os.path.join(save_path, f'{score}_{idx}_{trial_idx}_vis_graph.png'))
+
+        ### hacking for probs
+        result_brick_layout.predict_probs = result_brick_layout.predict
+
+        write_bricklayout(folder_path = debugger.file_path('./'),
+                          file_name = f'{score}_{idx}_data.pkl', brick_layout = result_brick_layout,
+                          with_features = False)
+
+        reloaded_layout = load_bricklayout(file_path = debugger.file_path(f'{score}_{idx}_data.pkl'), debugger = debugger,
+                                           complete_graph = environment.complete_graph)
+
+        ## asserting correctness
+        BrickLayout.assert_equal_layout(result_brick_layout, reloaded_layout)
+
+
+        result_brick_layout.show_predict(plotter, debugger, f'{score}_{idx}_predict.png')
+        result_brick_layout.show_super_contour(plotter, debugger, f'{score}_{idx}_super_contour.png')
+        visual_brick_layout_graph(result_brick_layout, debugger.file_path(f'{score}_{idx}_vis_graph.png'))
 
 
 

@@ -44,7 +44,7 @@ class ML_Solver(BaseSolver):
             # get prediction
             ################ WARNING
             # the result might have some problem whens using only 1 type of edge due to empty edge set
-            x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt = \
+            x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
                 brick_layout.get_data_as_torch_tensor(self.device)
             # print('node_size:', x.size(0))
             # print('adj_edge:', edge_index)
@@ -63,7 +63,7 @@ class ML_Solver(BaseSolver):
             return probs.detach().cpu().numpy()
 
     def get_unsupervised_losses_from_layout(self, brick_layout, probs):
-        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt = \
+        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
             brick_layout.get_data_as_torch_tensor(self.device)
 
         _, _, losses = Losses.calculate_unsupervised_loss(probs, x, collide_edge_index,
@@ -80,7 +80,7 @@ class ML_Solver(BaseSolver):
         return output_layout, score
 
     def get_predict_probs(self, brick_layout : BrickLayout):
-        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt = \
+        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
             brick_layout.get_data_as_torch_tensor(self.device)
 
         probs = get_network_prediction(
@@ -95,14 +95,11 @@ class ML_Solver(BaseSolver):
 
     # select one probability map from all possibilities
     def select_solution(self, brick_layout, probs, is_by_supervise_loss):
-        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt = \
+        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
             brick_layout.get_data_as_torch_tensor(self.device)
 
         assert len(probs) > 0
-        if is_by_supervise_loss:
-            _, min_index = Trainer.calculate_supervised_loss(probs, gt)
-        else:
-            _, min_index, _ = Trainer.calculate_loss_unsupervise(probs, x, collide_edge_index, adj_edge_index, adj_edge_features)
+        _, min_index, _ = Trainer.calculate_loss_unsupervise(probs, x, collide_edge_index, adj_edge_index, adj_edge_features)
         return min_index
 
     def visualise_result_by_transparent_color(self, brick_layout : BrickLayout, plotter, save_dir):
@@ -178,7 +175,7 @@ class ML_Solver(BaseSolver):
         optimizer = torch.optim.Adam(self.network.parameters(), lr=config.learning_rate)
 
         ##### DATA ######
-        x, adj_edge_index, adj_edge_features, collide_edge_index, _, _ = to_torch_tensor(device = self.device,
+        x, adj_edge_index, adj_edge_features, collide_edge_index, *_ = to_torch_tensor(device = self.device,
                         node_feature = brick_layout.node_feature,
                         align_edge_index = brick_layout.align_edge_index,
                         align_edge_features = brick_layout.align_edge_features,

@@ -48,14 +48,13 @@ if __name__ == '__main__':
         graph = TileGraph(data_env.tile_count)
         graph.load_graph_state(os.path.join(data_env.base_path, file_name))
 
-        node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, gt, re_index = factory.gen_one_train_data(plotter, graph, low=2, high=10)
-        brick_layout = BrickLayout(debugger, graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index,\
-        align_edge_features, gt, re_index)
+        node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = factory.gen_one_testing_data(plotter, graph, low=2, high=10)
+        brick_layout = BrickLayout(graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index,\
+        align_edge_features, re_index)
         # brick_layout.load_from_file("../data/brick_layouts/data_2.pkl")
 
         # brick_layout.target = target
         brick_layout.show_complete_graph(plotter, f"{num_rings}_complete_graph.png")
-        brick_layout.show_ground_truth(plotter, f"{num_rings}_GT.png")
         brick_layout.show_candidate_tiles(plotter, f"{num_rings}_supper_graph.png")
         brick_layout.show_super_contour(plotter, f"{num_rings}_super_contour.png")
 

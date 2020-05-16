@@ -22,7 +22,7 @@ SIMPLIFIED_TILE_EPS = BUFFER_TILE_EPS * 1e3
 
 class BrickLayout():
     def __init__(self, complete_graph: TileGraph, node_feature, collide_edge_index,
-                 collide_edge_features, align_edge_index, align_edge_features, ground_truth, re_index,
+                 collide_edge_features, align_edge_index, align_edge_features, re_index,
                  target_polygon=None):
         self.complete_graph = complete_graph
         self.node_feature = node_feature
@@ -66,7 +66,6 @@ class BrickLayout():
         new_inst.align_edge_features = self.align_edge_features
         new_inst.re_index = self.re_index
         new_inst.inverse_index = self.inverse_index
-        new_inst.ground_truth = self.ground_truth
         new_inst.predict = copy.deepcopy(self.predict)
         new_inst.predict_probs = copy.deepcopy(self.predict_probs)
         new_inst.super_contour_poly = self.super_contour_poly
@@ -377,10 +376,10 @@ class BrickLayout():
         return False
 
     def get_data_as_torch_tensor(self, device):
-        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt = \
-            util.data_util.to_torch_tensor(device, self.node_feature, self.align_edge_index, self.align_edge_features, self.collide_edge_index, self.collide_edge_features, self.ground_truth)
+        x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
+            util.data_util.to_torch_tensor(device, self.node_feature, self.align_edge_index, self.align_edge_features, self.collide_edge_index, self.collide_edge_features)
 
-        return x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features, gt
+        return x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features
 
     def compute_sub_layout(self, predict):
         assert len(self.node_feature) == len(predict.labelled_nodes) + len(predict.unlabelled_nodes)
@@ -420,7 +419,7 @@ class BrickLayout():
         for i in range(node_feature.shape[0]):
             fixed_re_index[self.inverse_index[node_inverse_index[i]]] = i
 
-        return BrickLayout(complete_graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, None, fixed_re_index, target_polygon=self.target_polygon), node_inverse_index
+        return BrickLayout(complete_graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, fixed_re_index, target_polygon=self.target_polygon), node_inverse_index
 
     def build_graph_from_prediction(self):
 
