@@ -58,8 +58,7 @@ def tiling_a_region():
         solved_layout[0]
         # TODO:
         #  1. save brick layout here
-        #  2. make sure the following things are stored in bricklayout: 1) the input tiling region 2) the tiling order 3) the probabilities 4) the graph visualization function
-        #  3. the brick layout are saved in a light-weight manner, and restore them when reload them.
+        #  2. make sure the following things are stored and implemented in bricklayout: 1) the input tiling region 2) the tiling order in algorithm 1 3) the probabilities 4) the graph visualization function
         result_brick_layout.show_predict(plotter, debugger, debugger.file_path(f'{score}_{idx}_{trial_idx}_predict.png'))
         result_brick_layout.show_super_contour(plotter, debugger.file_path(f'{score}_{idx}_{trial_idx}_super_contour.png'))
         visual_brick_layout_graph(result_brick_layout, os.path.join(save_path, f'{score}_{idx}_{trial_idx}_vis_graph.png'))
