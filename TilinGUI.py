@@ -500,30 +500,12 @@ class DrawerWidgets(QMainWindow):
 
                 # all dirs
                 save_path = debugger.file_path('./')
-                objs_path = os.path.join(save_path, 'objs')
-                sequences_base_path = os.path.join(save_path, 'sequences')
-                tree_search_layout_base_dir = os.path.join(save_path, 'tree_search')
-                if not os.path.isdir(tree_search_layout_base_dir):
-                    os.mkdir(tree_search_layout_base_dir)
 
                 self.solution_cnt += 1
-                # save the intermediate result if needed
-                tree_search_layout_dir = None
-                if config.output_tree_search_layout:
-                    tree_search_layout_dir = os.path.join(tree_search_layout_base_dir, f'{self.brick_layout_cnt}_{self.solution_cnt}')
-                    os.mkdir(tree_search_layout_dir)
 
-                result_brick_layout, score, _ = self.solver.solve(brick_layout,
-                                                                  time_limit=config.evaluation_search_time_limit,
-                                                                  intermediate_results_dir= tree_search_layout_dir)
-
-
-                if not os.path.isdir(sequences_base_path):
-                    os.mkdir(sequences_base_path)
+                result_brick_layout, score = self.solver.solve(brick_layout)
 
                 if score != 0:
-                    has_hole = result_brick_layout.detect_holes()
-
                     if current_max_score < score:
                         current_max_score = score
                         self.current_best_solution = deepcopy(result_brick_layout)
@@ -531,20 +513,15 @@ class DrawerWidgets(QMainWindow):
                         self.app.processEvents()
                         print(f"current_max_score : {current_max_score}")
 
-                    if config.save_tiling_pictures and (len(self.current_polygon_interiors) > 0 or not config.detect_holes or not has_hole):
-                        result_brick_layout.show_predict(plotter, self.debugger, os.path.join(save_path,
-                                                                               f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_predict.png'))
-                        result_brick_layout.show_super_contour(plotter, self.debugger, os.path.join(save_path,
-                                                                                     f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_super_contour.png'))
-                        result_brick_layout.show_candidate_tiles(plotter, self.debugger, os.path.join(save_path,
-                                                                                   f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_super_graph.png'))
+                    result_brick_layout.show_predict(plotter, self.debugger, os.path.join(save_path,
+                                                                           f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_predict.png'))
+                    result_brick_layout.show_super_contour(plotter, self.debugger, os.path.join(save_path,
+                                                                                 f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_super_contour.png'))
+                    result_brick_layout.show_candidate_tiles(plotter, self.debugger, os.path.join(save_path,
+                                                                               f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_super_graph.png'))
 
-                        file_prefix = f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}'
-                        factory.save_all_layout_info(file_prefix = file_prefix, result_brick_layout = result_brick_layout, save_path = save_path, with_features = False)
-
-                    if config.save_objs and (len(self.current_polygon_interiors) > 0 or not config.detect_holes or not has_hole):
-                        result_brick_layout.save_predict_as_objs(os.path.join(objs_path, f"{score}_{self.brick_layout_cnt}_{self.solution_cnt}_objs"),
-                                                                 file_name="tile")
+                    file_prefix = f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}'
+                    factory.save_all_layout_info(file_prefix = file_prefix, result_brick_layout = result_brick_layout, save_path = save_path, with_features = False)
 
             return result_brick_layout
         else:
