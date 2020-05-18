@@ -22,27 +22,22 @@ def solve_by_probablistic_greedy(ml_solver, origin_layout, tree_search_layout_di
     collision_edges = origin_layout.collide_edge_index
 
     ## Initial the variables
-    current_predict = SearchPrediction(node_num)
+    current_solution = SelectionSolution(node_num)
     round_cnt = 1
 
-    while len(current_predict.unlabelled_nodes) > 0:
+    while len(current_solution.unlabelled_nodes) > 0:
 
-        ## compute sublayout and prob
-        temp_layout, node_re_index = origin_layout.compute_sub_layout(current_predict)
+        ## create layout for currently unselected nodes
+        temp_layout, node_re_index = origin_layout.compute_sub_layout(current_solution)
         prob = ml_solver.predict(temp_layout)
 
-        ## get the minimium loss map
-        prob_tensor = torch.from_numpy(prob).float().to(ml_solver.device)
-        selcted_index = get_selected_maps(ml_solver, prob_tensor, temp_layout, top_k = 1)[0]
-        selected_prob = prob_tensor[:, selcted_index].detach().cpu().numpy()
-
         ### compute new probs_value
-        previous_prob = np.array(list(current_predict.unlabelled_nodes.values()))
-        prob_new = np.power(np.power(previous_prob, round_cnt - 1) * selected_prob, 1 / round_cnt)
+        previous_prob = np.array(list(current_solution.unlabelled_nodes.values()))
+        prob_new = np.power(np.power(previous_prob, round_cnt - 1) * prob, 1 / round_cnt)
 
         ## update the prob saved
         for i in range(len(prob_new)):
-            current_predict.unlabelled_nodes[node_re_index[i]] = prob_new[i]  ## update the prob
+            current_solution.unlabelled_nodes[node_re_index[i]] = prob_new[i]  ## update the prob
 
         ## argsort the prob in descending
         sorted_indices = np.argsort(-prob_new)
@@ -51,13 +46,13 @@ def solve_by_probablistic_greedy(ml_solver, origin_layout, tree_search_layout_di
             origin_idx = node_re_index[idx]
 
             ## collision handling
-            if not origin_idx in current_predict.unlabelled_nodes:
+            if not origin_idx in current_solution.unlabelled_nodes:
                     break
 
             ## conditional adding the node
             if np.exp(prob_new[idx] - 1) > np.random.uniform():
-                current_predict.label_node(origin_idx, 1, origin_layout)
-                current_predict = label_collision_neighbor(collision_edges, current_predict, origin_idx, origin_layout)
+                current_solution.label_node(origin_idx, 1, origin_layout)
+                current_solution = label_collision_neighbor(collision_edges, current_solution, origin_idx, origin_layout)
 
         # update the count
         round_cnt += 1
@@ -65,15 +60,15 @@ def solve_by_probablistic_greedy(ml_solver, origin_layout, tree_search_layout_di
         ### save intermediate bricklayout
         if tree_search_layout_dir is not None and config.output_tree_search_layout:
             temp_output_layout = deepcopy(origin_layout)
-            _, temp_predict, temp_predict_order = create_solution(current_predict, origin_layout)
+            _, temp_predict, temp_predict_order = create_solution(current_solution, origin_layout)
             temp_output_layout.predict = temp_predict
             temp_output_layout.predict_order = temp_predict_order
             save_all_layout_info(file_prefix=f'{round_cnt-2}', result_brick_layout=temp_output_layout, save_path=tree_search_layout_dir, with_features = False)
 
     ### create an output
-    score, output_solution, predict_order = create_solution(current_predict, origin_layout)
+    score, selection_predict, predict_order = create_solution(current_solution, origin_layout)
 
-    return output_solution, score, predict_order
+    return selection_predict, score, predict_order
 
 
 
@@ -89,7 +84,7 @@ def solve_by_treesearch(ml_solver, origin_layout,  is_random_network, time_limit
     results = []
     results_dic = {}
 
-    predict = SearchPrediction(node_num)
+    predict = SelectionSolution(node_num)
     queue.append(predict)
     start_time = time.time()
 
@@ -116,7 +111,7 @@ def solve_by_treesearch(ml_solver, origin_layout,  is_random_network, time_limit
 
         ## get the top k losses index for selection
         prob_tensor = torch.from_numpy(prob).float().to(ml_solver.device)
-        selected_map = get_selected_maps(ml_solver, prob_tensor, temp_layout, top_k)
+        selected_map = get_best_prob_map(ml_solver, prob_tensor, temp_layout, top_k)
 
         for m in selected_map:
             prob_network = prob[:, m]
@@ -248,16 +243,6 @@ def get_nodes_order_array(prob_m, top_k):
     return sampled_elem_array
 
 
-def get_selected_maps(ml_solver, prob_tensor, temp_layout, top_k):
-    ## if not more collision edges or not more adj edges --> no need to calculate the unsupervised loss
-    ## because all nodes would be selected anyway
-    if len(temp_layout.collide_edge_index) > 0 and len(temp_layout.align_edge_index) > 0:
-        losses = ml_solver.get_unsupervised_losses_from_layout(temp_layout, prob_tensor)
-        selected_map = np.argsort(losses)[:top_k]
-    else:
-        selected_map = range(ml_solver.num_prob_maps)[:top_k]
-    return selected_map
-
 
 def assert_temp_layout(node_re_index, origin_layout, temp_layout):
     ####################### Checking the generated bricklayout
@@ -304,7 +289,7 @@ def check_connected(origin_layout, origin_idx, new_predict):
         input()
         return False
 
-class SearchPrediction(object):
+class SelectionSolution(object):
     def __init__(self, node_num):
         self.labelled_nodes = OrderedDict(sorted({}.items()))
         self.unlabelled_nodes = OrderedDict(sorted({key: 1.0 for key in range(node_num)}.items()))

@@ -41,7 +41,7 @@ def tiling_a_region():
     ##### get candidate tile placements inside the tiling region by cropping
     cropped_brick_layouts = crop_multiple_layouts_from_contour(exterior_contour, interior_contours, environment.complete_graph,
                                                               start_angle=0, end_angle=30, num_of_angle=1,
-                                                              movement_delta_ratio=[0, 0.5], margin_padding_ratios=[0.5])
+                                                              movement_delta_ratio=[0, 0.5], margin_padding_ratios=[0.15])
 
     ##### show the cropped tile placements
     for idx, (brick_layout, coverage) in enumerate(cropped_brick_layouts):
@@ -74,7 +74,7 @@ def tiling_a_region():
         BrickLayout.assert_equal_layout(result_brick_layout, reloaded_layout)
 
 
-        result_brick_layout.show_predict(plotter, debugger, f'{score}_{idx}_predict.png')
+        result_brick_layout.show_predict(plotter, debugger, f'{score}_{idx}_predict.png', do_show_super_contour=True, do_show_tiling_region=True)
         result_brick_layout.show_super_contour(plotter, debugger, f'{score}_{idx}_super_contour.png')
         visual_brick_layout_graph(result_brick_layout, debugger.file_path(f'{score}_{idx}_vis_graph.png'))
 

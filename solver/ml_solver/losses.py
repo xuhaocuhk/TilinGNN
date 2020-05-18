@@ -73,17 +73,18 @@ class Losses:
 
 
     @staticmethod
-    def calculate_unsupervised_loss(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_lengths):
+    def calculate_unsupervised_loss(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_feature):
         # start time
         start_time = time.time()
         N = probs.shape[0]  # number of nodes
         M = probs.shape[1]  # number of output features
-        E_col = collide_edge_index.shape[1]  # number of collision edges
-        E_adj = adj_edge_lengths.shape[0]
+        E_col = collide_edge_index.shape[1] if len(collide_edge_index) > 0 else 0  # to handle corner cases when no collision edge exist
+        E_adj = adj_edges_index.shape[1] if len(adj_edges_index) > 0 else 0
         losses = []
         COLLISION_WEIGHT    = config.COLLISION_WEIGHT
         ALIGN_LENGTH_WEIGHT = config.ALIGN_LENGTH_WEIGHT
         AVG_AREA_WEIGHT     = config.AVG_AREA_WEIGHT
+
 
         for sol in range(M):
             solution_prob = probs[:, sol]
@@ -92,11 +93,12 @@ class Losses:
             loss_ave_area = torch.log(avg_tile_area)
 
             ########### collision feasibility loss
-            first_index = collide_edge_index[0, :]
-            first_prob = torch.gather(solution_prob, dim=0, index=first_index)
-            second_index = collide_edge_index[1, :]
-            second_prob = torch.gather(solution_prob, dim=0, index=second_index)
-            if collide_edge_index.size(1) > 0:
+            if E_col > 0:
+                first_index = collide_edge_index[0, :]
+                first_prob = torch.gather(solution_prob, dim=0, index=first_index)
+                second_index = collide_edge_index[1, :]
+                second_prob = torch.gather(solution_prob, dim=0, index=second_index)
+
                 prob_product = torch.clamp(first_prob * second_prob, min=eps, max=1 - eps)
                 loss_per_edge = torch.log(1 - prob_product)
                 loss_per_edge = loss_per_edge.view(-1)
@@ -105,13 +107,15 @@ class Losses:
                 loss_feasibility = 0.0
 
             ########### edge length loss
-            first_index = adj_edges_index[0, :]
-            first_prob = torch.gather(solution_prob, dim=0, index=first_index)
-            second_index = adj_edges_index[1, :]
-            second_prob = torch.gather(solution_prob, dim=0, index=second_index)
-            if adj_edges_index.size(1) > 0:
-                if not (first_prob * second_prob * adj_edge_lengths >= 0).all() or not (first_prob * second_prob * adj_edge_lengths <= 1).all():
-                    input()
+            if E_adj > 0:
+                adj_edge_lengths = adj_edge_feature[:, 1]
+
+                first_index = adj_edges_index[0, :]
+                first_prob = torch.gather(solution_prob, dim=0, index=first_index)
+                second_index = adj_edges_index[1, :]
+                second_prob = torch.gather(solution_prob, dim=0, index=second_index)
+                assert (first_prob * second_prob * adj_edge_lengths >= 0).all() or not (first_prob * second_prob * adj_edge_lengths <= 1).all()
+
                 prob_product = torch.clamp(first_prob * second_prob * adj_edge_lengths, min=eps)
                 loss_per_adjedge = torch.log(prob_product) / math.log(10)
                 loss_per_adjedge = loss_per_adjedge.view(-1)

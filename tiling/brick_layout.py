@@ -85,21 +85,76 @@ class BrickLayout():
         plotter.draw_contours(debugger.file_path(file_name),
                               [tile.get_plot_attribute(style) for tile in selected_tiles])
 
-    def show_predict(self, plotter, debugger, file_name):
+    def show_predict(self, plotter, debugger, file_name, do_show_super_contour, do_show_tiling_region):
         tiles = self.predict
+
+        # show input polygon
+        tiling_region_exteriors, tiling_region_interiors = self.get_target_shape_shadow(self.target_polygon) \
+                                                               if do_show_tiling_region else ([],[])
+
+        # show cropped region
+        super_contour_poly = self.get_super_contour_poly()
+        super_contour_exteriors, super_contour_interiors = BrickLayout.get_polygon_plot_attr(super_contour_poly, style='lightblue') \
+                                                               if do_show_super_contour else ([], [])
+        # show selected tiles
+        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute("blue_trans") for i in
+                               range(len(tiles)) if tiles[i] == 1]
+
+
         plotter.draw_contours(debugger.file_path(file_name),
-                              [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute("blue_trans") for i in
-                               range(len(tiles)) if
-                               tiles[i] == 1])
+                              tiling_region_exteriors + tiling_region_interiors + super_contour_exteriors + super_contour_interiors + selected_tiles)
+
 
     def show_super_contour(self, plotter, debugger, file_name):
         super_contour_poly = self.get_super_contour_poly()
         exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(super_contour_poly, show_line = True)
         plotter.draw_contours(debugger.file_path(file_name), exteriors_contour_list + interiors_list)
 
+    def visual_adjacency_graph(self, save_path, edge_type="all", is_vis_prob=True, node_size=10,
+                               edge_width=0.7, xlim=(-1, 1.6), ylim=(-1, 1.6)):
+        # create Graph
+        G_symmetric = nx.Graph()
+        col_edges = [tuple(self.collide_edge_index[:, i]) for i in
+                     range(self.collide_edge_index.shape[1])]
+        adj_edges = [tuple(self.align_edge_index[:, i]) for i in range(self.align_edge_index.shape[1])]
+        if edge_type == "all":
+            edges = col_edges + adj_edges
+        elif edge_type == "collision":
+            edges = col_edges
+        elif edge_type == "adjacent":
+            edges = adj_edges
+        else:
+            print(f"error edge type!!! {edge_type}")
+
+        edge_color = ["gray" for i in range(len(edges))]
+
+        # draw networks
+        G_symmetric.add_nodes_from(range(self.node_feature.shape[0]))
+        node_color = [self.predict_probs[i] if is_vis_prob else "blue" for i in
+                      range(self.node_feature.shape[0])]
+        tile_indices = [self.inverse_index[i] for i in range(self.node_feature.shape[0])]
+        node_pos_pts = [self.complete_graph.tiles[index].tile_poly.centroid for index in tile_indices]
+        node_pos = list(map(lambda pt: [pt.x, - pt.y], node_pos_pts))
+        print(node_pos)
+        # G_symmetric.add_edges_from(edges)
+
+        vmin, vmax = 0.0, 1.0
+        cmap = plt.cm.Reds
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm.set_array([])
+        cbar = plt.colorbar(sm)
+        nx.draw_networkx(G_symmetric, pos=node_pos, node_size=node_size, node_color=node_color, cmap=cmap,
+                         width=edge_width, edgelist=edges, edge_color=edge_color,
+                         vmin=vmin, vmax=vmax, with_labels=False, style="dashed" if col_edges else "solid")
+
+        plt.xlim(*xlim)
+        plt.ylim(*ylim)
+        plt.savefig(save_path, dpi=400)
+        print(f'saving file {save_path}...')
+        plt.close()
+
+
     ############ BACK UP #################
-
-
 
     def show_predict_with_transparent_color(self, plotter, file_name):
         # show prediction probs with color

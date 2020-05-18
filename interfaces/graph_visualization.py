@@ -12,8 +12,8 @@ def visual_brick_layout_graph(brick_layout, save_path, edge_type = "all", is_vis
 
     # create Graph
     G_symmetric = nx.Graph()
-    col_edges = [ tuple(brick_layout.collide_edge_index[:, i]) for i in range(brick_layout.collide_edge_index.shape[1])]
-    adj_edges = [tuple(brick_layout.align_edge_index[:, i]) for i in range(brick_layout.align_edge_index.shape[1])]
+    col_edges = [ tuple(brick_layout.collide_edge_index[:, i]) for i in range(brick_layout.collide_edge_index.shape[1])] if brick_layout.collide_edge_index.shape[0] > 0 else []
+    adj_edges = [tuple(brick_layout.align_edge_index[:, i]) for i in range(brick_layout.align_edge_index.shape[1])] if brick_layout.align_edge_index.shape[0] > 0 else []
     if edge_type == "all":
         edges = col_edges + adj_edges
     elif edge_type == "collision":

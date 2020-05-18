@@ -31,43 +31,33 @@ class ML_Solver(BaseSolver):
         self.num_prob_maps = num_prob_maps
 
     def predict(self, brick_layout : BrickLayout):
-        if len(brick_layout.collide_edge_index) == 0:  # only collision edges left, select them all
-            # print("empty edges!")
-            return np.ones((brick_layout.node_feature.shape[0], self.num_prob_maps))
-        elif len(brick_layout.align_edge_index) == 0:
-            solver = MinizincSolver(model_file='./solver/minizinc_solver/solve_contour_multiTile_with_align.mzn',
-                                    solver_type='coin-bc',
-                                    debugger=self.debugger)
-            brick_layout, _ = solver.solve(brick_layout, verbose = False)
-            return np.tile(np.array(brick_layout.predict),(self.num_prob_maps,1)).T
+        predictions = None
+        if len(brick_layout.collide_edge_index) == 0 or len(brick_layout.align_edge_index) == 0:  # only collision edges left, select them all
+            predictions = torch.ones((brick_layout.node_feature.shape[0], self.num_prob_maps)).float().to(self.device)
         else:
-            # get prediction
-            ################ WARNING
-            # the result might have some problem whens using only 1 type of edge due to empty edge set
+            # convert to torch tensor
             x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
                 brick_layout.get_data_as_torch_tensor(self.device)
-            # print('node_size:', x.size(0))
-            # print('adj_edge:', edge_index)
-            # print('collide_edge:', collide_edge_index)
-            probs = get_network_prediction(network = self.network,
-                                           x = x,
-                                           adj_e_index = adj_edge_index,
-                                           adj_e_features = adj_edge_features,
-                                           col_e_idx = collide_edge_index,
-                                           col_e_features = collide_edge_features)
-            ### return None for the functions if cuda memory error
-            if probs is None:
-                input("network output is None!!!")
-                return None
 
-            return probs.detach().cpu().numpy()
+            # get network prediction
+            predictions, *_ = self.network(x=x,
+                                adj_e_index=adj_edge_index,
+                                adj_e_features=adj_edge_features,
+                                col_e_idx=collide_edge_index,
+                                col_e_features=collide_edge_features)
+
+        ## get the minimium loss map
+        best_map_index = get_best_prob_map(self, predictions, brick_layout)
+        selected_prob = predictions[:, best_map_index].detach().cpu().numpy()
+
+        return selected_prob
 
     def get_unsupervised_losses_from_layout(self, brick_layout, probs):
         x, adj_edge_index, adj_edge_features, collide_edge_index, collide_edge_features = \
             brick_layout.get_data_as_torch_tensor(self.device)
 
         _, _, losses = Losses.calculate_unsupervised_loss(probs, x, collide_edge_index,
-                                                          adj_edges_index=adj_edge_index, adj_edge_lengths=adj_edge_features[:, 1])
+                                                          adj_edges_index=adj_edge_index, adj_edge_feature=adj_edge_features)
         return losses
 
     def solve(self, brick_layout : BrickLayout, intermediate_results_dir = None):
@@ -76,6 +66,7 @@ class ML_Solver(BaseSolver):
         output_layout = deepcopy(brick_layout)
         output_layout.predict_order = predict_order
         output_layout.predict = output_solution
+        output_layout.predict_probs = self.predict(brick_layout)
 
         return output_layout, score
 
@@ -223,3 +214,8 @@ class ML_Solver(BaseSolver):
     def load_saved_network(self, net_path):
         self.network = torch.load(net_path, map_location = self.device)
         self.network.train()
+
+def get_best_prob_map(ml_solver, prob_tensor, temp_layout):
+    losses = ml_solver.get_unsupervised_losses_from_layout(temp_layout, prob_tensor)
+    selected_map = np.argsort(losses)[0]
+    return selected_map
