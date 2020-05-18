@@ -351,7 +351,6 @@ def save_all_layout_info(file_prefix, result_brick_layout : BrickLayout, save_pa
     #### assertion for correctness
     reloaded_bricklayout = load_bricklayout(
         os.path.join(save_path, f'{file_prefix}_data.pkl'),
-        debugger=result_brick_layout.debugger,
         complete_graph=result_brick_layout.complete_graph)
     BrickLayout.assert_equal_layout(reloaded_bricklayout, result_brick_layout)
 

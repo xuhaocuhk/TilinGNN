@@ -55,7 +55,7 @@ def load_brick_layout_data(save_path):
     return dic['re_index'], dic['node_features'], dic['collide_edge_index'], dic['collide_edge_features'], dic['align_edge_index'], \
                             dic['align_edge_features'], dic['predict'], dic['predict_order'], dic['target_shape'], dic['predict_probs']
 
-def load_bricklayout(file_path, debugger, complete_graph):
+def load_bricklayout(file_path, complete_graph):
     re_index, node_features, collide_edge_index, collide_edge_features, align_edge_index,\
     align_edge_features, predict, predict_order, target_polygon, predict_probs = load_brick_layout_data(file_path)
 

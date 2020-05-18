@@ -13,10 +13,9 @@ from tiling.TileFactory import save_all_layout_info
 from solver.ml_solver.losses import Losses
 from inputs import config
 import pickle
-from interfaces.graph_visualization import visual_brick_layout_graph
 EPS = 1e-7
 
-def solve_by_probablistic_greedy(ml_solver, origin_layout, tree_search_layout_dir = None):
+def solve_by_probablistic_greedy(ml_solver, origin_layout):
 
     node_num = origin_layout.node_feature.shape[0]
     collision_edges = origin_layout.collide_edge_index
@@ -33,39 +32,31 @@ def solve_by_probablistic_greedy(ml_solver, origin_layout, tree_search_layout_di
 
         ### compute new probs_value
         previous_prob = np.array(list(current_solution.unlabelled_nodes.values()))
-        prob_new = np.power(np.power(previous_prob, round_cnt - 1) * prob, 1 / round_cnt)
+        prob_per_node = np.power(np.power(previous_prob, round_cnt - 1) * prob, 1 / round_cnt)
 
         ## update the prob saved
-        for i in range(len(prob_new)):
-            current_solution.unlabelled_nodes[node_re_index[i]] = prob_new[i]  ## update the prob
+        for i in range(len(prob_per_node)):
+            current_solution.unlabelled_nodes[node_re_index[i]] = prob_per_node[i]  ## update the prob
 
         ## argsort the prob in descending
-        sorted_indices = np.argsort(-prob_new)
+        sorted_indices = np.argsort(-prob_per_node)
 
         for idx in sorted_indices:
             origin_idx = node_re_index[idx]
 
             ## collision handling
             if not origin_idx in current_solution.unlabelled_nodes:
-                    break
+                break
 
             ## conditional adding the node
-            if np.exp(prob_new[idx] - 1) > np.random.uniform():
+            if np.exp((prob_per_node[idx] - 1)*1.0) > np.random.uniform():
                 current_solution.label_node(origin_idx, 1, origin_layout)
                 current_solution = label_collision_neighbor(collision_edges, current_solution, origin_idx, origin_layout)
 
         # update the count
         round_cnt += 1
 
-        ### save intermediate bricklayout
-        if tree_search_layout_dir is not None and config.output_tree_search_layout:
-            temp_output_layout = deepcopy(origin_layout)
-            _, temp_predict, temp_predict_order = create_solution(current_solution, origin_layout)
-            temp_output_layout.predict = temp_predict
-            temp_output_layout.predict_order = temp_predict_order
-            save_all_layout_info(file_prefix=f'{round_cnt-2}', result_brick_layout=temp_output_layout, save_path=tree_search_layout_dir, with_features = False)
-
-    ### create an output
+    ### create bricklayout with prediction
     score, selection_predict, predict_order = create_solution(current_solution, origin_layout)
 
     return selection_predict, score, predict_order

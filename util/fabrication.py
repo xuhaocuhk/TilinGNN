@@ -12,7 +12,6 @@ from shapely.ops import triangulate
 import os
 
 
-
 def clockwise_orientation(contour: np.ndarray) -> np.ndarray:
     """
     change a contour to counterclockwise direction

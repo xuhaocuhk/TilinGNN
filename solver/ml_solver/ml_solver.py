@@ -60,8 +60,8 @@ class ML_Solver(BaseSolver):
                                                           adj_edges_index=adj_edge_index, adj_edge_feature=adj_edge_features)
         return losses
 
-    def solve(self, brick_layout : BrickLayout, intermediate_results_dir = None):
-        output_solution, score, predict_order = algorithms.solve_by_probablistic_greedy(self, brick_layout, tree_search_layout_dir=intermediate_results_dir)
+    def solve(self, brick_layout : BrickLayout):
+        output_solution, score, predict_order = algorithms.solve_by_probablistic_greedy(self, brick_layout)
 
         output_layout = deepcopy(brick_layout)
         output_layout.predict_order = predict_order
@@ -105,7 +105,7 @@ class ML_Solver(BaseSolver):
         min_index = np.argsort(losses)[0]
         brick_layout.predict_probs = probs[:, min_index].view(-1).float().detach().cpu().numpy()
 
-        brick_layout.show_predict_with_transparent_color(plotter, os.path.join(self.debugger.file_path(save_dir),
+        brick_layout.show_predict_prob(plotter, os.path.join(self.debugger.file_path(save_dir),
                                                         f"data_prob_map_trans_predict.png"))
 
     def save_debug_info(self, plotter, sample_data, data_path, save_dir_root):
@@ -122,7 +122,7 @@ class ML_Solver(BaseSolver):
             if not os.path.isdir(save_dir):
                 os.mkdir(save_dir)
 
-            brick_layout = load_bricklayout(os.path.join(data_path, rand_data), self.debugger, self.complete_graph)
+            brick_layout = load_bricklayout(os.path.join(data_path, rand_data), self.complete_graph)
 
             # solve by greedy tree search
             results, _ = self.solve_by_algorithms(brick_layout, time_limit = config.search_time_limit, is_random_network= False, top_k = 1)
@@ -136,7 +136,7 @@ class ML_Solver(BaseSolver):
                 write_bricklayout(self.debugger.file_path(save_dir), f"tree_search_layout_{idx}_{score}.pkl", brick_layout, with_features = False)
 
                 ####### DEBUG FOR ASSERTION
-                reloaded_bricklayout = load_bricklayout(os.path.join(self.debugger.file_path(save_dir), f"tree_search_layout_{idx}_{score}.pkl"), debugger = self.debugger,
+                reloaded_bricklayout = load_bricklayout(os.path.join(self.debugger.file_path(save_dir), f"tree_search_layout_{idx}_{score}.pkl"),
                                  complete_graph = self.complete_graph)
                 BrickLayout.assert_equal_layout(reloaded_bricklayout, brick_layout)
 

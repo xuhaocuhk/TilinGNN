@@ -8,7 +8,6 @@ import util.data_util
 import copy
 from util import fabrication
 from util.algo_util import interp
-from tiling.color_table import color_map, tile_set_color_map
 import random
 import networkx as nx
 import itertools
@@ -85,11 +84,11 @@ class BrickLayout():
         plotter.draw_contours(debugger.file_path(file_name),
                               [tile.get_plot_attribute(style) for tile in selected_tiles])
 
-    def show_predict(self, plotter, debugger, file_name, do_show_super_contour, do_show_tiling_region):
+    def show_predict(self, plotter, debugger, file_name, do_show_super_contour = True, do_show_tiling_region = True):
         tiles = self.predict
 
         # show input polygon
-        tiling_region_exteriors, tiling_region_interiors = self.get_target_shape_shadow(self.target_polygon) \
+        tiling_region_exteriors, tiling_region_interiors = BrickLayout.get_polygon_plot_attr(self.target_polygon) \
                                                                if do_show_tiling_region else ([],[])
 
         # show cropped region
@@ -110,13 +109,16 @@ class BrickLayout():
         exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(super_contour_poly, show_line = True)
         plotter.draw_contours(debugger.file_path(file_name), exteriors_contour_list + interiors_list)
 
-    def visual_adjacency_graph(self, save_path, edge_type="all", is_vis_prob=True, node_size=10,
-                               edge_width=0.7, xlim=(-1, 1.6), ylim=(-1, 1.6)):
+    def show_adjacency_graph(self, save_path, edge_type="all", is_vis_prob=True, node_size=10,
+                             edge_width=0.7, xlim=(-1, 1.6), ylim=(-1, 1.6)):
         # create Graph
         G_symmetric = nx.Graph()
         col_edges = [tuple(self.collide_edge_index[:, i]) for i in
-                     range(self.collide_edge_index.shape[1])]
-        adj_edges = [tuple(self.align_edge_index[:, i]) for i in range(self.align_edge_index.shape[1])]
+                     range(self.collide_edge_index.shape[1])] if self.collide_edge_index.shape[
+                                                                             0] > 0 else []
+        adj_edges = [tuple(self.align_edge_index[:, i]) for i in
+                     range(self.align_edge_index.shape[1])] if self.align_edge_index.shape[
+                                                                           0] > 0 else []
         if edge_type == "all":
             edges = col_edges + adj_edges
         elif edge_type == "collision":
@@ -153,10 +155,7 @@ class BrickLayout():
         print(f'saving file {save_path}...')
         plt.close()
 
-
-    ############ BACK UP #################
-
-    def show_predict_with_transparent_color(self, plotter, file_name):
+    def show_predict_prob(self, plotter, debugger, file_name):
         # show prediction probs with color
         predict_probs = self.predict_probs
 
@@ -169,7 +168,7 @@ class BrickLayout():
         #### sort by prob
         sorted_indices = np.argsort(self.predict_probs)
 
-        plotter.draw_contours(self.debugger.file_path(file_name),
+        plotter.draw_contours(debugger.file_path(file_name),
                               exteriors_contour_list + interiors_list + [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute(
                                   (
                                       tuple(interp(predict_probs[i], vec1 = min_fill_color, vec2 = max_fill_color)),
@@ -177,196 +176,6 @@ class BrickLayout():
                                   )
                               ) for i in
                                sorted_indices])
-
-    def show_partial_result_with_tile_set_colors(self, env_name, select_tile_index, plotter, file_name):
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                          range(len(select_tile_index)) if
-                          select_tile_index[i] == 1]
-
-        if self.target_polygon is not None:
-            exteriors_contour_list, interior_list = BrickLayout.get_polygon_plot_attr(self.target_polygon)
-        else:
-            exteriors_contour_list, interior_list = [], []
-
-        selected_tiles_attr = [tile.get_plot_attribute(tile_set_color_map[env_name][tile.id]) for idx, tile
-                               in enumerate(selected_tiles)]
-
-        super_polygon = self.get_super_contour_poly()
-        exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(super_polygon,
-                                                                        style=((0, 0, 0, 0), (0, 0, 0, 0)))
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list + interiors_list + exteriors_contour_list + interior_list + selected_tiles_attr)
-
-    def show_predict_with_given_colors(self, color_result, select_tile_index, plotter, file_name):
-
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                          range(len(select_tile_index)) if
-                          select_tile_index[i] == 1]
-
-        complete_graph_idx = [self.inverse_index[i] for i in
-                          range(len(select_tile_index)) if
-                          select_tile_index[i] == 1]
-
-        selected_tiles_attr = [tile.get_plot_attribute( color_map[color_result[complete_graph_idx[idx]]] ) for idx, tile in enumerate(selected_tiles)]
-
-        super_polygon = self.get_super_contour_poly()
-        exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(super_polygon, style = ((0,0,0,0), (0,0,0,0)))
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list + interiors_list + selected_tiles_attr)
-
-    def show_predict_with_single_color(self, plotter, file_name, color_style):
-
-        if self.target_polygon is not None:
-            exteriors_contour_list_out, interiors_list_out = self.get_target_shape_shadow(self.target_polygon)
-        else:
-            exteriors_contour_list_out, interiors_list_out = None
-
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-        selected_tiles_attr = [tile.get_plot_attribute(color_style) for idx, tile in enumerate(selected_tiles)]
-
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list_out+ interiors_list_out + selected_tiles_attr)
-
-    def show_predict_with_background(self, plotter, file_name, color_style):
-        # show input polygon
-        if self.target_polygon is not None:
-            exteriors_contour_list_out, interiors_list_out = self.get_target_shape_shadow(self.target_polygon)
-        else:
-            exteriors_contour_list_out, interiors_list_out = None
-
-        # show cropped region
-        super_contour_poly = self.get_super_contour_poly()
-        exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(super_contour_poly, style='lightblue')
-
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-        selected_tiles_attr = [tile.get_plot_attribute(color_style) for idx, tile in enumerate(selected_tiles)]
-
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list_out+ interiors_list_out + exteriors_contour_list + interiors_list + selected_tiles_attr)
-
-    def show_predict_with_tile_set_color_map(self, plotter, file_name, env_name):
-        
-        ### GET COLOR FROM THE COLOR MAP FILE
-        if self.target_polygon is not None:
-            exteriors_contour_list_out, interiors_list_out = self.get_target_shape_shadow(self.target_polygon)
-        else:
-            exteriors_contour_list_out, interiors_list_out = [], []
-
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-
-        selected_tiles_attr = [ tile.get_plot_attribute(
-            tile_set_color_map[env_name][tile.id]
-        ) for idx, tile in enumerate(selected_tiles)]
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list_out + interiors_list_out + selected_tiles_attr
-                              )
-
-    def show_predict_with_super_contour(self, plotter, file_name, has_line = False):
-
-        super_contour_poly = self.get_super_contour_poly()
-        exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(super_contour_poly, show_line = has_line)
-
-        ###### add the contour first to
-        predict_list = [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute("pink_blue") for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list + interiors_list + predict_list)
-
-    def show_predict_with_input_shape(self, plotter, file_name):
-
-        if self.target_polygon is not None:
-            exteriors_contour_list, interiors_list = BrickLayout.get_polygon_plot_attr(self.target_polygon)
-        else:
-            exteriors_contour_list, interiors_list = [], []
-
-
-        ###### add the contour first to
-        predict_list = [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute("pink_blue") for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-        plotter.draw_contours(self.debugger.file_path(file_name), exteriors_contour_list + interiors_list + predict_list)
-
-    def show_predict_with_4_color(self, plotter, file_name):
-
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-
-        #### Calculate color ####
-        alignment_edges_from, alignment_edges_to = self.build_graph_from_prediction()
-        color_result = self.solve_color(len(selected_tiles), alignment_edges_from, alignment_edges_to)
-        # print(result)
-
-        selected_tiles_attr = [ tile.get_plot_attribute(
-            color_map[color_result[idx]]
-        ) for idx, tile in enumerate(selected_tiles)]
-
-        plotter.draw_contours(self.debugger.file_path(file_name), selected_tiles_attr)
-
-    def show_predict_with_random_color(self, plotter, file_name):
-
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                               range(len(self.predict)) if
-                               self.predict[i] == 1]
-
-        selected_tiles_attr = [ tile.get_plot_attribute(
-            color_map[random.randint(0, len(color_map) - 1)]
-        ) for tile in selected_tiles]
-
-        plotter.draw_contours(self.debugger.file_path(file_name), selected_tiles_attr)
-
-
-    def show_complete_graph(self, plotter, file_name):
-        plotter.draw_contours(self.debugger.file_path(file_name),
-                              [tile.get_plot_attribute("blue_trans") for tile in self.complete_graph.tiles])
-
-
-    ##### OTHER UTILS
-
-    def compute_tile_colors(self, predict):
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]] for i in
-                          range(len(predict)) if
-                          self.predict[i] == 1]
-
-        #### Calculate color ####
-        alignment_edges_from, alignment_edges_to = self.build_graph_from_prediction()
-        color_result = self.solve_color(len(selected_tiles), alignment_edges_from, alignment_edges_to)
-
-        # convert to dict
-        tile_to_color = {}
-        idx = 0
-        for i in range(len(self.predict)):
-            if self.predict[i] == 1:
-                tile_to_color[self.inverse_index[i]] = color_result[idx]
-                idx = idx + 1
-
-        return tile_to_color
-
-    def get_target_shape_shadow(self, target_shape, style = None):
-        if target_shape is not None:
-            exteriors_contour_list_out, interiors_list_out = BrickLayout.get_polygon_plot_attr(target_shape, style = style)
-        else:
-            exteriors_contour_list_out, interiors_list_out = [], []
-        return exteriors_contour_list_out, interiors_list_out
-
-    def save_predict_as_objs(self, sav_dir, file_name):
-        if not os.path.isdir(sav_dir):
-            os.makedirs(sav_dir)
-        boundary_points_list = [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute() for i in range(len(self.predict)) if self.predict[i] == 1]
-        for idx, tile_boundary in enumerate(boundary_points_list):
-            fabrication.generate_2d_obj(os.path.join(sav_dir, f"{file_name}_{idx}.obj"), tile_boundary[1][:-1,:])
 
     def get_super_contour_poly(self):
         ### return super contour poly if already calculated
@@ -476,48 +285,6 @@ class BrickLayout():
 
         return BrickLayout(complete_graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, fixed_re_index, target_polygon=self.target_polygon), node_inverse_index
 
-    def build_graph_from_prediction(self):
-
-        selected_nodes = [ i for i in range(len(self.predict)) if self.predict[i] == 1]
-
-        alignment_edges_from = []
-        alignment_edges_to = []
-        for idx_i, idx_j in itertools.combinations(range(len(selected_nodes)), 2):
-            tile_i = self.complete_graph.tiles[self.inverse_index[selected_nodes[idx_i]]]
-            tile_j = self.complete_graph.tiles[self.inverse_index[selected_nodes[idx_j]]]
-            if polygon_align_length(tile_i, tile_j) > EPS:
-                alignment_edges_from.append(idx_i)
-                alignment_edges_to.append(idx_j)
-
-        return alignment_edges_from, alignment_edges_to
-
-    def solve_color(self, num_of_nodes, adj_from, adj_to):
-        from minizinc import Solver, Model, Instance
-
-        solver = Solver.lookup('coin-bc')
-        model = Model()
-        model.add_file('./tiling/coloring.mzn')
-
-        instance = Instance(solver, model)
-        instance['nums_node'] = num_of_nodes
-        instance['from_adjacent'] = adj_from
-        instance['to_adjacent'] = adj_to
-        instance['nums_edge_adjacent'] = len(adj_to)
-
-        # print(f"num_of_nodes : {num_of_nodes}")
-        # print(f"adj_from : {adj_from}")
-        # print(f"adj_to : {adj_to}")
-        # print(f"len : {len(adj_to)}")
-
-        result = instance.solve()
-        # getting result of nodes if exist
-        assert (result.solution)
-
-        color = np.argmax(result['node_color'], axis = 1)
-
-
-        return color
-
     @staticmethod
     def assert_equal_layout(brick_layout_1, brick_layout_2):
         assert np.array_equal(brick_layout_1.node_feature, brick_layout_2.node_feature)
@@ -537,7 +304,6 @@ class BrickLayout():
         assert np.array_equal(brick_layout_1.predict_probs, brick_layout_2.predict_probs)
         assert brick_layout_1.predict_order == brick_layout_2.predict_order
         assert brick_layout_1.target_polygon == brick_layout_2.target_polygon
-
 
 if __name__ == "__main__":
     pass

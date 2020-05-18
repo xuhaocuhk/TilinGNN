@@ -384,6 +384,10 @@ class TileGraph:
         num_of_collide_edges = len(self.colli_edges)  // 2
         return num_of_nodes, num_of_adj_edges, num_of_collide_edges
 
+    def show_complete_graph(self, plotter, debugger, file_name):
+        plotter.draw_contours(debugger.file_path(file_name),
+                              [tile.get_plot_attribute("blue_trans") for tile in self.tiles])
+
 
 if __name__ == '__main__':
     # Driver code

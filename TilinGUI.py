@@ -14,7 +14,6 @@ from PyQt5.QtWidgets import QWidget, QLCDNumber, QSlider, \
     QVBoxLayout, QApplication, QPushButton, QFileDialog, QInputDialog, QMainWindow
 from util.data_util import write_brick_layout_data, load_bricklayout
 from inputs import config
-from interfaces.graph_visualization import visual_brick_layout_graph
 from interfaces import figure_config as fig_conf
 from copy import deepcopy
 from inputs.shape_factory import export_contour_as_text
@@ -105,7 +104,7 @@ class DrawerWidgets(QMainWindow):
         self.graph_x_min, self.graph_x_max, self.graph_y_min, self.graph_y_max = factory.get_graph_bound(self.complete_graph)
 
     def initUI(self):
-        self.setWindowTitle('Polygons Drawer')
+        self.setWindowTitle('Tiling Interface')
         self.setWindowFlags(self.windowFlags())
         self.show()
 
@@ -481,8 +480,8 @@ class DrawerWidgets(QMainWindow):
         # visual_brick_layout_graph(brick_layout = self.current_brick_layout, save_path = self.debugger.file_path('./graph.png'))
         self.brick_layout_cnt += 1
         self.solution_cnt = 0
-        self.current_brick_layout.show_candidate_tiles(self.plotter,
-                                                       self.debugger.file_path(f'{self.brick_layout_cnt}_super_graph.png'),
+        self.current_brick_layout.show_candidate_tiles(self.plotter, self.debugger,
+                                                       f'{self.brick_layout_cnt}_super_graph.png',
                                                        style="blue_trans")
         self.plotter.draw_contours(self.debugger.file_path(
             f'generated_shape_{self.brick_layout_cnt}.png'),
@@ -533,13 +532,11 @@ class DrawerWidgets(QMainWindow):
                         print(f"current_max_score : {current_max_score}")
 
                     if config.save_tiling_pictures and (len(self.current_polygon_interiors) > 0 or not config.detect_holes or not has_hole):
-                        result_brick_layout.show_predict(plotter, os.path.join(save_path,
+                        result_brick_layout.show_predict(plotter, self.debugger, os.path.join(save_path,
                                                                                f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_predict.png'))
-                        result_brick_layout.show_predict_with_super_contour(plotter, os.path.join(save_path,
-                                                                               f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_predict_sup.png'))
-                        result_brick_layout.show_super_contour(plotter, os.path.join(save_path,
+                        result_brick_layout.show_super_contour(plotter, self.debugger, os.path.join(save_path,
                                                                                      f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_super_contour.png'))
-                        result_brick_layout.show_candidate_tiles(plotter, os.path.join(save_path,
+                        result_brick_layout.show_candidate_tiles(plotter, self.debugger, os.path.join(save_path,
                                                                                    f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}_super_graph.png'))
 
                         file_prefix = f'{score}_{self.brick_layout_cnt}_{self.solution_cnt}'
@@ -556,7 +553,7 @@ class DrawerWidgets(QMainWindow):
     def load_brick_layout(self):
         filename, filetype = QFileDialog.getOpenFileName(self, 'Open File')
         if os.path.exists(filename):
-            self.current_brick_layout = load_bricklayout(filename, self.debugger, self.complete_graph)
+            self.current_brick_layout = load_bricklayout(filename, self.complete_graph)
             polygon = self.current_brick_layout.get_super_contour_poly()
             self.current_polygon_exterior = list(np.array(polygon.exterior.coords))
             self.current_polygon_interiors = list(map(lambda interior : list(np.array(interior)), polygon.interiors))
@@ -566,7 +563,7 @@ class DrawerWidgets(QMainWindow):
     def load_brick_layout_with_prediction(self):
         filename, filetype = QFileDialog.getOpenFileName(self, 'Open File')
         if os.path.exists(filename):
-            self.current_best_solution = load_bricklayout(filename, self.debugger, self.complete_graph)
+            self.current_best_solution = load_bricklayout(filename, self.complete_graph)
             print(f"{filename} loaded!")
             self.repaint()
 

@@ -1,6 +1,5 @@
 from util.shape_processor import getSVGShapeAsNp, load_polygons
 from tiling.TileFactory import crop_multiple_layouts_from_contour
-from interfaces.graph_visualization import visual_brick_layout_graph
 import pickle
 import numpy as np
 from tiling.TileFactory import run_one_layout
@@ -19,10 +18,18 @@ from tiling.brick_layout import BrickLayout
 EPS = 1e-5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def init():
+    MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
+    debugger = MyDebugger(f"region_tiling", fix_rand_seed=config.rand_seed,
+                          save_print_to_file=False)
+    plotter = Plotter()
+    return debugger, plotter
+
 def tiling_a_region():
     debugger, plotter = init()
     environment = config.environment # must be 30-60-90
     environment.load_complete_graph(config.complete_graph_size)
+    environment.complete_graph.show_complete_graph(plotter, debugger, "complete_graph.png")
 
     solver = ML_Solver(debugger, device, environment.complete_graph, None, num_prob_maps= 1)
     solver.load_saved_network(config.network_path)
@@ -41,7 +48,7 @@ def tiling_a_region():
     ##### get candidate tile placements inside the tiling region by cropping
     cropped_brick_layouts = crop_multiple_layouts_from_contour(exterior_contour, interior_contours, environment.complete_graph,
                                                               start_angle=0, end_angle=30, num_of_angle=1,
-                                                              movement_delta_ratio=[0, 0.5], margin_padding_ratios=[0.15])
+                                                              movement_delta_ratio=[0, 0.5], margin_padding_ratios=[0.5])
 
     ##### show the cropped tile placements
     for idx, (brick_layout, coverage) in enumerate(cropped_brick_layouts):
@@ -56,9 +63,6 @@ def tiling_a_region():
     for idx, solved_layout in enumerate(solutions):
         has_hole = result_brick_layout.detect_holes()
         result_brick_layout, score = solved_layout
-        # TODO:
-        #  1. save brick layout here
-        #  2. make sure the following things are stored and implemented in bricklayout: 1) the input tiling region 2) the tiling order in algorithm 1 3) the probabilities 4) the graph visualization function
 
         ### hacking for probs
         result_brick_layout.predict_probs = result_brick_layout.predict
@@ -67,66 +71,16 @@ def tiling_a_region():
                           file_name = f'{score}_{idx}_data.pkl', brick_layout = result_brick_layout,
                           with_features = False)
 
-        reloaded_layout = load_bricklayout(file_path = debugger.file_path(f'{score}_{idx}_data.pkl'), debugger = debugger,
+        reloaded_layout = load_bricklayout(file_path = debugger.file_path(f'{score}_{idx}_data.pkl'),
                                            complete_graph = environment.complete_graph)
 
         ## asserting correctness
         BrickLayout.assert_equal_layout(result_brick_layout, reloaded_layout)
 
-
         result_brick_layout.show_predict(plotter, debugger, f'{score}_{idx}_predict.png', do_show_super_contour=True, do_show_tiling_region=True)
         result_brick_layout.show_super_contour(plotter, debugger, f'{score}_{idx}_super_contour.png')
-        visual_brick_layout_graph(result_brick_layout, debugger.file_path(f'{score}_{idx}_vis_graph.png'))
-
-
-
-
-def init():
-    MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
-    debugger = MyDebugger(f"region_tiling", fix_rand_seed=config.rand_seed,
-                          save_print_to_file=False)
-    plotter = Plotter()
-    return debugger, plotter
-
-
-def load_and_show_train_data():
-    debugger, plotter = init()
-    env_name = "30-60-90"
-    symmetry_tiles, complete_graph_size, number_of_data, data_folder = config.env_attribute_dict[env_name]
-    env_location = os.path.join('.', 'data', "30-60-90")
-    environment = Environment(env_location, symmetry_tiles=symmetry_tiles)
-    environment.load_complete_graph(9)
-
-    for i in range(0,4):
-        brick_layout = load_bricklayout(f"/home/edwardhui/data/figures/overview/version4/raw/data_{i}.pkl", debugger, environment.complete_graph)
-        predict = pickle.load(open(f"/home/edwardhui/data/figures/overview/version4/raw/{i}_selected.pkl", 'rb')) # the node selection
-        predict_probs = np.load(f"/home/edwardhui/data/figures/overview/version4/raw/{i}_predict_prob.npy") # the network output prob
-        brick_layout.predict_probs = np.ones(brick_layout.node_feature.shape[0])
-        brick_layout.predict_probs = predict_probs
-
-        visual_brick_layout_graph(brick_layout, debugger.file_path(f"vis_graph_{i}.png"), is_vis_prob = False, node_size = 30, edge_width = 0.4, xlim = (-3, 3), ylim = (-3, 3))
-        brick_layout.show_candidate_tiles(plotter, f"super_graph_{i}.png")
-        brick_layout.show_super_contour(plotter, f"super_contour_{i}.png")
-
-def load_and_show_one_data():
-    debugger, plotter = init()
-    env_name = "30-60-90"
-    symmetry_tiles, complete_graph_size, number_of_data, data_folder = config.env_attribute_dict[env_name]
-    env_location = os.path.join('.', 'data', "30-60-90")
-    environment = Environment(env_location, symmetry_tiles=symmetry_tiles)
-    environment.load_complete_graph(9)
-
-
-    brick_layout = load_bricklayout(f"/home/edwardhui/data/figures/overview/version4/raw/data_{i}.pkl", debugger, environment.complete_graph)
-    predict = pickle.load(open(f"/home/edwardhui/data/figures/overview/version4/raw/{i}_selected.pkl", 'rb')) # the node selection
-    predict_probs = np.load(f"/home/edwardhui/data/figures/overview/version4/raw/{i}_predict_prob.npy") # the network output prob
-    brick_layout.predict_probs = np.ones(brick_layout.node_feature.shape[0])
-    brick_layout.predict_probs = predict_probs
-
-    visual_brick_layout_graph(brick_layout, debugger.file_path(f"vis_graph_{i}.png"), is_vis_prob = False, node_size = 30, edge_width = 0.4, xlim = (-3, 3), ylim = (-3, 3))
-    brick_layout.show_candidate_tiles(plotter, f"super_graph_{i}.png")
-    brick_layout.show_super_contour(plotter, f"super_contour_{i}.png")
-
+        result_brick_layout.show_adjacency_graph(debugger.file_path(f'{score}_{idx}_vis_graph.png'))
+        result_brick_layout.show_predict_prob(plotter, debugger, f'{score}_{idx}_prob.png')
 
 
 if __name__ == '__main__':
