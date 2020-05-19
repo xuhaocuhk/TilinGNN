@@ -13,7 +13,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if __name__ == "__main__":
     MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
     debugger = MyDebugger(f"gen_data_{config.env_name}-ring{config.complete_graph_size}-{config.number_of_data}",
-                          fix_rand_seed = config.rand_seed, save_print_to_file=config.save_print_to_file)
+                          fix_rand_seed = config.rand_seed, save_print_to_file=False)
     plotter = Plotter()
     data_env = config.environment
     data_env.load_complete_graph(config.complete_graph_size)
@@ -21,8 +21,9 @@ if __name__ == "__main__":
     trainer = Trainer(debugger, plotter, device, None, data_path=config.dataset_path)
 
     trainer.create_data(data_env.complete_graph,
-                        low=config.low, high=config.high,
-                        max_vertices=   config.max_vertices,
-                        testing_ratio=  config.testing_ratio,
-                        number_of_data= config.number_of_data)
+                        low            = config.shape_size_lower_bound,
+                        high           = config.shape_size_upper_bound,
+                        max_vertices   = config.max_vertices,
+                        testing_ratio  = config.validation_data_proportion,
+                        number_of_data = config.number_of_data)
 

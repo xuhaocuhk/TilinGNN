@@ -3,7 +3,7 @@ from util.debugger import MyDebugger
 from interfaces.qt_plot import Plotter
 from tiling.brick_layout import BrickLayout
 from util.shape_processor import getSVGShapeAsNp
-from tiling.TileGraph import TileGraph
+from tiling.tile_graph import TileGraph
 import os
 import time
 from solver.base_solver import BaseSolver

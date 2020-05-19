@@ -2,7 +2,7 @@ import os
 import glob
 from util.shape_processor import getSVGShapeAsNp
 from tiling.tile import Tile
-from tiling.TileGraph import TileGraph
+from tiling.tile_graph import TileGraph
 from shapely.geometry import Polygon
 import shapely
 

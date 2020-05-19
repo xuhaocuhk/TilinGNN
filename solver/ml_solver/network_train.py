@@ -16,7 +16,7 @@ if __name__ == "__main__":
     EDWNet = getattr(mod, 'EDWNet')
 
     MyDebugger.pre_fix = os.path.join(os.path.join(MyDebugger.pre_fix, "training"), "running")
-    debugger = MyDebugger(f"training_{config.debug_id}_{config.EDWNET_NAME}_{config.LOSSES_NAME}", fix_rand_seed = config.rand_seed, save_print_to_file=config.save_print_to_file)
+    debugger = MyDebugger(f"training_{config.debug_id}_{config.EDWNET_NAME}_{config.LOSSES_NAME}", fix_rand_seed = config.rand_seed, save_print_to_file=False)
     plotter = Plotter()
     data_env = config.environment
     data_env.load_complete_graph(config.complete_graph_size)

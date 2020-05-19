@@ -9,7 +9,7 @@ import ssl
 import tiling.brick_layout
 import torch
 
-from tiling.TileGraph import TileGraph
+from tiling.tile_graph import TileGraph
 
 ssl._create_default_https_context = ssl._create_unverified_context
 optional_variables_names = ['node_features', 'collide_edge_index', 'collide_edge_features', 'align_edge_index',

@@ -1,8 +1,6 @@
 import os
 from inputs.env import Environment
 import math
-import torch
-import inputs.models as trained_models
 
 ################### DATA SET SELECTION ###################
 env_name = '30-60-90'
@@ -15,7 +13,7 @@ env_name = '30-60-90'
 ################### DATA SET CONFIGURATION ###################
 # format: "tile set name : (mirror all tiles?, size of the superset, number of training data)"
 env_attribute_dict = {
-    '30-60-90'             : (True,  9, 12000),
+    '30-60-90'             : (True,  9, 10),
     '30-60-90+equilateral' : (True,  9, 12000),
     '30-60-90+rectangle'   : (True,  7, 12000),
     '45-45-90+rectangle'   : (False, 9,7000),
@@ -30,10 +28,10 @@ environment = Environment(env_location, symmetry_tiles=symmetry_tiles)
 dataset_path = os.path.join('./dataset', f"{env_name}-ring{complete_graph_size}-{number_of_data}")
 
 ################### CREATING DATA ###################
-low=0.4
-high=0.6
+shape_size_lower_bound=0.4
+shape_size_upper_bound=0.6
 max_vertices=20
-testing_ratio=0.1
+validation_data_proportion=0.2
 
 ################### NETWORK PARAMETERS ###################
 network_depth = 20
@@ -68,7 +66,6 @@ training_experiment = False
 
 
 ################### DEBUGGING ###################
-save_print_to_file = True
 debug_data_num = 5
 search_time_limit = complete_graph_size * 2
 debug_base_folder = ".."

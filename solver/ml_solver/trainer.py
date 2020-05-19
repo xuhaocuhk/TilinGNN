@@ -5,7 +5,7 @@ import numpy as np
 from solver.ml_solver.data_util import GraphDataset
 from util.data_util import write_brick_layout_data, load_brick_layout_data
 from util.algo_util import append_text_to_file
-import tiling.TileFactory as factory
+import tiling.tile_factory as factory
 from torch_geometric.data import DataLoader
 import time
 import glob

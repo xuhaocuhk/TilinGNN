@@ -1,8 +1,8 @@
 import os
 from util.debugger import MyDebugger
 from interfaces.qt_plot import Plotter
-from tiling.TileGraph import TileGraph, form_complete_graph, get_all_tiles
-import tiling.TileFactory as factory
+from tiling.tile_graph import TileGraph, form_complete_graph, get_all_tiles
+import tiling.tile_factory as factory
 from inputs import config
 from tiling.brick_layout import BrickLayout
 
@@ -48,14 +48,6 @@ if __name__ == '__main__':
         graph = TileGraph(data_env.tile_count)
         graph.load_graph_state(os.path.join(data_env.base_path, file_name))
 
-        node_feature, collide_edge_index, collide_edge_features, align_edge_index, align_edge_features, re_index = factory.gen_one_testing_data(plotter, graph, low=2, high=10)
-        brick_layout = BrickLayout(graph, node_feature, collide_edge_index, collide_edge_features, align_edge_index,\
-        align_edge_features, re_index)
-        # brick_layout.load_from_file("../data/brick_layouts/data_2.pkl")
-
-        # brick_layout.target = target
-        brick_layout.show_complete_graph(plotter, f"{num_rings}_complete_graph.png")
-        brick_layout.show_candidate_tiles(plotter, f"{num_rings}_supper_graph.png")
-        brick_layout.show_super_contour(plotter, f"{num_rings}_super_contour.png")
+        graph.show_complete_super_graph(plotter, debugger, f"super_graph_{num_rings}")
 
         print(f"done_{num_rings}")

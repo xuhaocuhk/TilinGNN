@@ -1,8 +1,8 @@
 from util.shape_processor import getSVGShapeAsNp, load_polygons
-from tiling.TileFactory import crop_multiple_layouts_from_contour
+from tiling.tile_factory import crop_multiple_layouts_from_contour
 import pickle
 import numpy as np
-from tiling.TileFactory import run_one_layout
+from tiling.tile_factory import run_one_layout
 from util.debugger import MyDebugger
 import os
 import torch
@@ -29,7 +29,7 @@ def tiling_a_region():
     debugger, plotter = init()
     environment = config.environment # must be 30-60-90
     environment.load_complete_graph(config.complete_graph_size)
-    environment.complete_graph.show_complete_graph(plotter, debugger, "complete_graph.png")
+    environment.complete_graph.show_complete_super_graph(plotter, debugger, "complete_graph.png")
 
     solver = ML_Solver(debugger, device, environment.complete_graph, None, num_prob_maps= 1)
     solver.load_saved_network(config.network_path)

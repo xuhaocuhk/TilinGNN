@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from tiling.TileGraph import TileGraph
+from tiling.tile_graph import TileGraph
 from shapely.ops import unary_union
 import shapely
 from collections import defaultdict

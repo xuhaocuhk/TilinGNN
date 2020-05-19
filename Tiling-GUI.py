@@ -1,5 +1,5 @@
 import os
-import tiling.TileFactory as factory
+import tiling.tile_factory as factory
 from tiling.brick_layout import BrickLayout
 from shapely.geometry import Polygon, LineString
 from solver.ml_solver.ml_solver import ML_Solver
@@ -561,7 +561,7 @@ Instructions here
 '''
 if __name__ == "__main__":
     MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
-    debugger = MyDebugger("brick_layout_test", fix_rand_seed=0, save_print_to_file = config.save_print_to_file)
+    debugger = MyDebugger("brick_layout_test", fix_rand_seed=0, save_print_to_file = False)
     plotter = Plotter()
     data_env = config.environment
     data_env.load_complete_graph(config.complete_graph_size)

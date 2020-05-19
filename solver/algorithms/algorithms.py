@@ -9,7 +9,7 @@ import shapely
 from collections import OrderedDict
 from util.algo_util import softmax
 from util.data_util import write_brick_layout_data, write_bricklayout
-from tiling.TileFactory import save_all_layout_info
+from tiling.tile_factory import save_all_layout_info
 from solver.ml_solver.losses import Losses
 from inputs import config
 import pickle

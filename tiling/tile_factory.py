@@ -4,7 +4,7 @@ from util.shape_processor import getSVGShapeAsNp, load_polygons
 import torch.multiprocessing as mp
 import torch
 import random
-from tiling.TileGraph import TileGraph
+from tiling.tile_graph import TileGraph
 from tiling.brick_layout import BrickLayout
 from shapely.ops import unary_union
 from util.algo_util import contain

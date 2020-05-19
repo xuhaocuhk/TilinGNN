@@ -4,14 +4,14 @@ import torch
 from inputs import config
 import os
 from solver.ml_solver.ml_solver import ML_Solver
-from tiling.TileFactory import solve_silhouette_dir
+from tiling.tile_factory import solve_silhouette_dir
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
     MyDebugger.pre_fix = os.path.join(os.path.join(MyDebugger.pre_fix, "evaluation"), "running")
     debugger = MyDebugger(f"evaluation_{config.env_name}_{os.path.basename(config.silhouette_path)}", fix_rand_seed=config.rand_seed,
-                          save_print_to_file=config.save_print_to_file)
+                          save_print_to_file=True)
     plotter = Plotter()
     environment = config.environment
     environment.load_complete_graph(config.complete_graph_size)

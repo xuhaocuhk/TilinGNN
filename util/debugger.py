@@ -40,13 +40,6 @@ class MyDebugger():
         copyfile(config_file_path, config_file_save_path)
         print(f"config file created at {config_file_save_path}")
 
-        ######## copy model file to
-        model_file_path = os.path.join('inputs', 'models.py')
-        model_file_save_path = self.file_path('models.py')
-        assert os.path.exists(model_file_path)
-        copyfile(model_file_path, model_file_save_path)
-        print(f"model file created at {model_file_save_path}")
-
     def file_path(self, file_name):
         return os.path.join(self._debug_dir_name, file_name)
 

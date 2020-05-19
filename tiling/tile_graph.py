@@ -10,7 +10,6 @@ import util.tiling_util as tiling_util
 from tiling.tile import Tile
 EPS = 1e-5
 ONE_HOT_EPS = 1e-3
-from tiling.forbidden_align_list import forbidden_array
 # from inputs import config
 
 def get_tile_instance(base_tile: Tile, base_edge_idx, align_tile: Tile, align_edge_idx, align_mode):
@@ -31,8 +30,6 @@ def get_all_tiles(base_tile: Tile, align_tile: Tile, integer_align):
                     if abs(math.floor(base_edge_length / tile_edge_length + EPS) - base_edge_length / tile_edge_length) > EPS and \
                        abs(math.floor(tile_edge_length / base_edge_length + EPS) - tile_edge_length / base_edge_length) > EPS:
                         continue
-                if align_tag in forbidden_array[config.env_name]:
-                    continue
 
                 new_tile = get_tile_instance(base_tile, base_edge_idx, align_tile, align_neighbor_idx, align_mode=align_mode)
                 if tiling_util.intersection_area(new_tile, base_tile) < EPS:
@@ -384,7 +381,7 @@ class TileGraph:
         num_of_collide_edges = len(self.colli_edges)  // 2
         return num_of_nodes, num_of_adj_edges, num_of_collide_edges
 
-    def show_complete_graph(self, plotter, debugger, file_name):
+    def show_complete_super_graph(self, plotter, debugger, file_name):
         plotter.draw_contours(debugger.file_path(file_name),
                               [tile.get_plot_attribute("blue_trans") for tile in self.tiles])
 
