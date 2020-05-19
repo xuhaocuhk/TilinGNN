@@ -52,28 +52,21 @@ class Trainer():
 
     def train(self,
               ml_solver,
-              lr=5e-3,
+              optimizer,
               batch_size=32,
               training_epoch=10000,
-              model_saving_epoch=5,
-              new_training = True,
-              optimizer_path = None):
+              model_saving_epoch=5):
 
         dataset_train = GraphDataset(root=self.training_path)
         loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
         dataset_test = GraphDataset(root=self.testing_path)
         loader_test = DataLoader(dataset_test, batch_size=1, shuffle=True)
-        optimizer = torch.optim.Adam(self.network.parameters(), lr=lr)
-        if not new_training and optimizer_path is not None:
-            optimizer_stae_dict = torch.load(optimizer_path)
-            optimizer.load_state_dict(optimizer_stae_dict)
 
         print("Training Start!!!", flush=True)
         min_test_loss = float("inf")
         for i in range(training_epoch):
             self.network.train()
             for batch in loader_train:
-
                 ## get prediction
                 data = batch.to(self.device)
                 probs = get_network_prediction(network = self.network,
@@ -82,23 +75,14 @@ class Trainer():
                                                adj_e_features=data.edge_features,
                                                col_e_idx=data.collide_edge_index,
                                                col_e_features=None)
-                ## if the probs is None --> Cuda out of memory
-                if probs is None:
-                    continue
+
                 try:
                     optimizer.zero_grad()
-
-                    if config.training_by_sampling:
-                        train_loss = Losses.loss_prediction_by_epsilon_greedy(probs, data.x, data.collide_edge_index,
-                                                                                        adj_edges_index=data.edge_index,
-                                                                                        adj_edge_lengths=data.edge_features[:,1],
-                                                                                        epsilon = config.epsilon)
-                    else:
-                        train_loss, *_ = Losses.calculate_unsupervised_loss(probs, data.x, data.collide_edge_index,
-                                                                                        adj_edges_index=data.edge_index,
-                                                                                        adj_edge_lengths=data.edge_features[:,1])
-                        ## add diversity loss by cross entropy
-                        train_loss = train_loss + config.DIVERSITY_WEIGHT * Losses._calculate_pairwise_cross_entropy(probs)
+                    train_loss, *_ = Losses.calculate_unsupervised_loss(probs, data.x, data.collide_edge_index,
+                                                                                    adj_edges_index=data.edge_index,
+                                                                                    adj_edge_lengths=data.edge_features[:,1])
+                    ## add diversity loss by cross entropy
+                    train_loss = train_loss + config.DIVERSITY_WEIGHT * Losses._calculate_pairwise_cross_entropy(probs)
                     train_loss.backward()
                     optimizer.step()
                 except:

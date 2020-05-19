@@ -44,7 +44,7 @@ rand_seed = 2
 batch_size = 1
 learning_rate = 1e-3
 training_epoch = 10000
-model_saving_epoch = 2
+save_model_per_epoch = 2
 optimizer_path = None
 
 COLLISION_WEIGHT    = 1/math.log(1+1e-1)

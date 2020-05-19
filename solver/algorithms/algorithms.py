@@ -234,7 +234,6 @@ def get_nodes_order_array(prob_m, top_k):
     return sampled_elem_array
 
 
-
 def assert_temp_layout(node_re_index, origin_layout, temp_layout):
     ####################### Checking the generated bricklayout
     for i in range(temp_layout.node_feature.shape[0]):
