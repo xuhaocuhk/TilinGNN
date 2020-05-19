@@ -21,13 +21,9 @@ if __name__ == "__main__":
     #### Network
     network = None
     if config.new_training:
-        network = EDWNet(adj_edge_features_dim=data_env.complete_graph.total_feature_dim,
-                        col_edge_feature_dim=1,
-                        output_dim=config.num_output_probs_maps).to(device)
-
+        network = EDWNet(adj_edge_features_dim=data_env.complete_graph.total_feature_dim, col_edge_feature_dim=1, output_dim=config.num_output_probs_maps).to(device)
     else:
         network = torch.load(config.load_trained_model_path, map_location=self.device)
-        network.train()
 
     #### Optimizer
     optimizer = torch.optim.Adam(network.parameters(), lr=config.learning_rate)
@@ -36,7 +32,6 @@ if __name__ == "__main__":
         optimizer.load_state_dict(optimizer_stae_dict)
 
     ml_solver = ML_Solver(debugger, device, data_env.complete_graph, network, num_prob_maps=config.num_output_probs_maps)
-
 
     trainer = Trainer(debugger, plotter, device, ml_solver.network, data_path=config.dataset_path)
 
