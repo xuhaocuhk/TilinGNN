@@ -45,21 +45,6 @@ class Losses:
 
 
     @staticmethod
-    def calculate_supervised_loss(probs, target):
-        losses = []
-        for p in range(probs.size()[1]):
-            probs_selected = probs[:, p].view(-1)
-            assert (probs_selected >= 0).all()
-            assert (probs_selected <= 1).all()
-            loss_each = torch.nn.BCELoss()(probs_selected, target)
-            losses.append(loss_each)
-        losses = torch.stack(losses)
-        loss = torch.min(losses)
-        min_index = torch.argmin(losses).detach().cpu().numpy()
-        return loss, min_index
-
-
-    @staticmethod
     def calculate_unsupervised_loss(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_features):
         # start time
         start_time = time.time()
@@ -130,29 +115,6 @@ class Losses:
         losses = losses.detach().cpu().numpy()
         return loss, min_index, losses
 
-
-    @staticmethod
-    def _calculate_pairwise_cross_entropy(probs):
-        # transpose prob_1 and prob_2
-        probs = probs.permute(1, 0)
-
-        # get combinatorial
-        combinations = itertools.product(range(probs.size(0)), range(probs.size(0)))
-        index_1, index_2 = zip(*combinations)
-        index_1 = torch.Tensor(index_1).long().to(device)
-        index_2 = torch.Tensor(index_2).long().to(device)
-        # print("probs :", probs)
-        # print("index_1 :", index_1)
-        # print("index_2 :", index_2)
-        probs_1 = torch.index_select(probs, dim=0, index=index_1).to(device)
-        probs_2 = torch.index_select(probs, dim=0, index=index_2).to(device)
-        # print("probs_1 :", probs_1)
-        # print("probs_2 :", probs_2)
-
-        cross_entropy = torch.mean(torch.nn.functional.binary_cross_entropy_with_logits(probs_1, probs_2))
-        # print("cross_entropy :", cross_entropy)
-        return - cross_entropy
-
     # to evaluate the quality of a collision-free solution
     @staticmethod
     def solution_score(predict, brick_layout):
@@ -185,106 +147,6 @@ class Losses:
 
         return (config.AVG_AREA_WEIGHT * filled_area + config.ALIGN_LENGTH_WEIGHT * (loss_align_length/all_edge_length)).detach().cpu().item()
 
-    @staticmethod
-    def get_statistics_for_prediction(predict, x, adj_edge_index, adj_edge_features, collide_edge_index):
-
-        ######## calculate total area
-        filled_area = predict.dot(x[:, -1]) / sum(x[:, -1])
-        assert filled_area >= -1e-7 and filled_area <= 1 + 1e-7
-
-        ######## calculate alignment length
-        if adj_edge_features.size(0) > 0:
-            adj_edge_lengths = adj_edge_features[:, 1]
-            first_index = adj_edge_index[0, :]
-            first_prob = torch.gather(predict, dim=0, index=first_index)
-            second_index = adj_edge_index[1, :]
-            second_prob = torch.gather(predict, dim=0, index=second_index)
-            avg_align_length = (first_prob * second_prob).dot(adj_edge_lengths) / sum(
-                adj_edge_lengths)  # total edge length
-            assert avg_align_length >= -1e-7 and avg_align_length <= 1 + 1e-7
-        else:
-            avg_align_length = 0.0
-
-        ########### collision feasibility loss
-        first_index = collide_edge_index[0, :]
-        first_prob = torch.gather(predict, dim=0, index=first_index)
-        second_index = collide_edge_index[1, :]
-        second_prob = torch.gather(predict, dim=0, index=second_index)
-        if collide_edge_index.size(1) > 0:
-            prob_product = torch.clamp(first_prob * second_prob, min=eps, max=1 - eps)
-            loss_per_edge = prob_product
-            loss_per_edge = loss_per_edge.view(-1)
-            avg_collision_probs = torch.mean(loss_per_edge)
-            assert avg_collision_probs >= -1e-7 and avg_collision_probs <= 1 + 1e-7
-        else:
-            avg_collision_probs = 0.0
-
-        return avg_collision_probs, filled_area, avg_align_length
-
-    @staticmethod
-    def loss_prediction_by_epsilon_greedy(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_lengths, epsilon):
-
-        ## clamping probs
-        probs = torch.clamp(probs, min = eps)
-
-        _, min_index, _ = Losses.calculate_unsupervised_loss(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_lengths)
-        min_prob = probs[:, min_index]
-
-        if np.random.uniform() > epsilon:
-            if config.greedy_sampling:
-                prediction = Losses.greedy_sampling(min_prob, collide_edge_index)
-            else:
-                sampling_dist = torch.distributions.bernoulli.Bernoulli(min_prob)
-                prediction = sampling_dist.sample().detach().to(device)  # ensure no gradient will be calculated here
-        else:
-            sampling_prob = torch.full((probs.size(0),), 0.5).to(device)
-            sampling_dist = torch.distributions.bernoulli.Bernoulli(sampling_prob)
-            prediction = sampling_dist.sample().detach().to(device)  # ensure no gradient will be calculated here
-
-        ## loss
-        prediction_loss, *_  = Losses.calculate_unsupervised_loss(prediction.unsqueeze(1), node_feature, collide_edge_index, adj_edges_index, adj_edge_lengths)
-
-        ## actual sampling dist
-        actual_sampling_dist = torch.distributions.bernoulli.Bernoulli(min_prob)
-        log_prob = torch.mean(actual_sampling_dist.log_prob(prediction))
-
-        ## baseline
-        baseline_comparsion = torch.full((probs.size(0),), 0.5).to(device)
-        prediction_loss_baseline, *_  = Losses.calculate_unsupervised_loss(baseline_comparsion.unsqueeze(1), node_feature, collide_edge_index, adj_edges_index, adj_edge_lengths)
-
-
-        # policy gradient loss
-        loss = (prediction_loss - prediction_loss_baseline) * log_prob
-        
-        print(f"loss : {loss}, log_prob : {log_prob}, prediction_loss : {prediction_loss}, prediction_loss_baseline : {prediction_loss_baseline}")
-        return loss
-
-    @staticmethod
-    def greedy_sampling(min_prob : torch.Tensor, collide_edge_index : torch.Tensor):
-
-        # convert to numpy
-        min_prob = min_prob.detach().cpu().numpy()
-        collide_edge_index = collide_edge_index.detach().cpu().numpy()
-
-        # construct a dict for searching
-        edge_dic = { i : {} for i in range(min_prob.shape[0])}
-        for i in range(collide_edge_index.shape[1]):
-            edge_dic[collide_edge_index[0,i]][collide_edge_index[1,i]] = 1
-
-        sorted_indices = np.argsort(-min_prob)
-
-        labelled_node = {}
-        prediction = torch.zeros((min_prob.shape[0])).to(device)
-
-        # argsort search solution
-        for idx in sorted_indices:
-            if idx not in labelled_node:
-                prediction[idx] = 1
-                labelled_node[idx] = 1
-                for collide_idx in edge_dic[idx].keys():
-                    labelled_node[collide_idx] = 1
-
-        return prediction
 
 
 
