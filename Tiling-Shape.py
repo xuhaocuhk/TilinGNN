@@ -2,7 +2,6 @@ from util.shape_processor import getSVGShapeAsNp, load_polygons
 from tiling.tile_factory import crop_multiple_layouts_from_contour
 import pickle
 import numpy as np
-from tiling.tile_factory import run_one_layout
 from util.debugger import MyDebugger
 import os
 import torch

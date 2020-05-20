@@ -11,7 +11,7 @@ from util.debugger import MyDebugger
 
 class Plotter:
     types = ('lightgreen', 'green', 'lightblue', 'blue', "blue_trans",
-             'pink_red', 'purple', 'violet', 'green_blue', 'orange', 'yellow', 'light_gray',
+             'pink_red', 'purple', 'violet', 'green_blue', 'orange', 'yellow', 'light_yellow', 'light_gray',
              'pink_blue', 'white', 'white_border', 'light_gray_border')
     pens = {
         type: QtGui.QPen(QtGui.QColor(*getattr(fig_conf, type)['edge'])) for type in types

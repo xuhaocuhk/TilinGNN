@@ -293,50 +293,6 @@ class TileGraph:
             assert input_feature[1] > 0
             self.adj_edges.append((u,v))
 
-    # Function to print a BFS of brick_layouts
-    def gen_target_tiles(self, low, high):
-        TILE_NUM = np.random.randint(low=low, high=high)
-        SEED_TILE = np.random.randint(low=0, high=len(self.tiles))
-        result_tiles = []
-
-        # Mark all the vertices as not visited
-        visited = [False] * (len(self.graph))
-
-        # Create a queue for BFS
-        queue = []
-
-        # Mark the source node as
-        # visited and enqueue it
-        queue.append(SEED_TILE)
-        visited[SEED_TILE] = True
-
-        while queue:
-            # Dequeue a vertex from queue
-            s = queue.pop(0)
-
-            # check new add node will have collision or not
-            collision_flag = False
-            for exist_node in result_tiles:
-                if (s in self.edges_features[exist_node].keys() and self.edges_features[exist_node][s][0] > 1e-6) or \
-                   s == exist_node:
-                    collision_flag = True
-                    break
-            if collision_flag:
-                continue
-
-            # append it to queue
-            result_tiles.append(s)
-            if len(result_tiles) == TILE_NUM:
-                break
-
-            # enqueue all adj nodes
-            np.random.shuffle(self.graph[s])
-            for i in self.graph[s]:
-                queue.append(i)
-                visited[i] = True
-
-        return result_tiles
-
     def save_current_state(self, path):
         dic = {
             'tiles' : self.tiles,

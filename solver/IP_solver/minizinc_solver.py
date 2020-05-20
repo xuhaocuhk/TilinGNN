@@ -7,7 +7,7 @@ from tiling.tile_graph import TileGraph
 import os
 import time
 from solver.base_solver import BaseSolver
-from solver.minizinc_solver.data_util import convert_layout_to_dzn_features
+from solver.IP_solver.data_util import convert_layout_to_dzn_features
 from inputs import config
 import numpy as np
 
@@ -72,27 +72,5 @@ class MinizincSolver(BaseSolver):
         return instance
 
 if __name__ == '__main__':
-    MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
-    debugger = MyDebugger("completely_unsupervised", fix_rand_seed=2)
-    plotter = Plotter()
-    data_env = config.environment
-    data_env.load_complete_graph(5)
-
-    for num_piece in range(2, 100):
-        for case_num in range(5):
-            node_feature, edge_index, edge_feature, gt, re_index = factory.gen_one_train_data(plotter, graph, low=num_piece, high=num_piece+1)
-            brick_layout = BrickLayout(debugger, graph, node_feature, edge_index, edge_feature, gt, re_index)
-
-            # initialize the solver
-            solver = MinizincSolver(model_file = './solve_contour_multiTile.mzn',
-                                    solver_type = 'coin-bc',
-                                    debugger = debugger)
-
-            # Solve the problem
-            result_brick_layout, exec_time = solver.solve(brick_layout)
-            brick_layout.show_complete_graph(plotter, f"{num_piece}_{case_num}_complete_graph.png")
-            brick_layout.show_tiles(plotter, f"{num_piece}_{case_num}_GT.png", draw_ground_truth = True)
-            brick_layout.show_tiles(plotter, f"{num_piece}_{case_num}_predict_{exec_time}.png", draw_ground_truth =  False)
-            brick_layout.show_candidate_tiles(plotter, f"{num_piece}_{case_num}_supper_graph.png")
-            brick_layout.show_super_contour(plotter, f"{num_piece}_{case_num}_n{len(node_feature)}_super_contour.png")
-
+    # TODO: add an example of how to use IP solver here
+    psss

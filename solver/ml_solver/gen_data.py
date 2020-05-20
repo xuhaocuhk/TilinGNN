@@ -1,6 +1,6 @@
 from util.debugger import MyDebugger
 from interfaces.qt_plot import Plotter
-from graph_networks.networks.EDWNet import EDWNet
+from graph_networks.networks.TilinGNN import TilinGNN
 import os
 from inputs import config
 from solver.ml_solver.trainer import Trainer

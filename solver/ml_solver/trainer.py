@@ -15,10 +15,9 @@ import inputs.config as config
 import traceback
 from graph_networks.network_utils import get_network_prediction
 from util.shape_processor import load_polygons
+from solver.ml_solver.losses import Losses
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-mod = __import__(config.LOSSES_PREFIX + config.LOSSES_NAME, fromlist=['Losses'])
-Losses = getattr(mod, 'Losses')
 
 class Trainer():
     def __init__(self, debugger, plotter, device, network, data_path):
@@ -55,7 +54,7 @@ class Trainer():
               optimizer,
               batch_size=32,
               training_epoch=10000,
-              model_saving_epoch=5):
+              save_model_per_epoch=5):
 
         dataset_train = GraphDataset(root=self.training_path)
         loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
@@ -81,49 +80,46 @@ class Trainer():
                     train_loss, *_ = Losses.calculate_unsupervised_loss(probs, data.x, data.collide_edge_index,
                                                                                     adj_edges_index=data.edge_index,
                                                                                     adj_edge_features=data.edge_features)
-                    ## add diversity loss by cross entropy
-                    train_loss = train_loss + config.DIVERSITY_WEIGHT * Losses._calculate_pairwise_cross_entropy(probs)
                     train_loss.backward()
                     optimizer.step()
                 except:
                     print(traceback.format_exc())
                     continue
 
-            self.network.train()
+            # self.network.train()
             torch.cuda.empty_cache()
-            loss_train, *_ = Losses.evaluate_loss(self.network, loader_train)
+            loss_train, *_ = Losses.cal_avg_loss(self.network, loader_train)
             print(f"epoch {i}: training loss: {loss_train}", flush=True)
-            loss_test, avg_collision_probs, avg_filled_area, avg_align_length  = Losses.evaluate_loss(self.network, loader_test)
+            loss_test, avg_collision_probs, avg_filled_area, avg_align_length  = Losses.cal_avg_loss(self.network, loader_test)
             print(f"epoch {i}: testing loss: {loss_test}", flush=True)
 
 
             ############# result debugging #############
-            if (loss_test < min_test_loss or i % model_saving_epoch == 0):
+            if (loss_test < min_test_loss or i % save_model_per_epoch == 0):
                 if loss_test < min_test_loss:
                     min_test_loss = loss_test
                 torch.cuda.empty_cache()
                 ############# network testing #############
-                self.network.train()
+                # self.network.train()
 
-                print(f"model save at epoch {i}")
+
                 torch.save(self.network, os.path.join(self.model_save_path, f'model_{i}_{loss_test}.pth'))
                 torch.save(optimizer.state_dict(), os.path.join(self.model_save_path, f'optimizer_{i}_{loss_test}.pth'))
+                print(f"model saved at epoch {i}")
 
                 ml_solver.load_saved_network(os.path.join(self.model_save_path, f'model_{i}_{loss_test}.pth'))
 
                 torch.cuda.empty_cache()
 
-                if not config.training_experiment:
-                    train_sample_data = np.random.randint(low=0, high=len(dataset_train), size=config.debug_data_num)
-                    test_sample_data = np.random.randint(low=0,  high=len(dataset_test),  size=config.debug_data_num)
+                train_sample_data = np.random.randint(low=0, high=len(dataset_train), size=config.debug_data_num)
+                test_sample_data = np.random.randint(low=0,  high=len(dataset_test),  size=config.debug_data_num)
 
-                    ###### evaluate with training mode
-                    self.network.train()
-                    ml_solver.save_debug_info(self.plotter, train_sample_data, os.path.join(self.training_path, "raw"),
-                                              os.path.join("result", os.path.join(f"epoch_{i}", 'train_tmode')))
-                    ml_solver.save_debug_info(self.plotter, test_sample_data, os.path.join(self.testing_path, "raw"),
-                                              os.path.join("result", os.path.join(f"epoch_{i}", 'test_tmode')))
-                    torch.cuda.empty_cache()
+                ###### evaluate with training mode
+                ml_solver.save_debug_info(self.plotter, train_sample_data, os.path.join(self.training_path, "raw"),
+                                          os.path.join("result", os.path.join(f"epoch_{i}", 'training')))
+                ml_solver.save_debug_info(self.plotter, test_sample_data, os.path.join(self.testing_path, "raw"),
+                                          os.path.join("result", os.path.join(f"epoch_{i}", 'testing')))
+                torch.cuda.empty_cache()
 
         print("Training Done!!!")
 

@@ -1,18 +1,14 @@
-from solver.minizinc_solver.minizinc_solver import MinizincSolver
 from tiling.brick_layout import BrickLayout
 import os
 import torch
 import numpy as np
-import random
 from solver.base_solver import BaseSolver
-from util.data_util import load_bricklayout, write_bricklayout, load_bricklayout, to_torch_tensor
+from util.data_util import write_bricklayout, load_bricklayout
 from copy import deepcopy
 from solver.ml_solver.trainer import Trainer
 from solver.ml_solver.losses import Losses
 from graph_networks.network_utils import get_network_prediction
-import inputs.config as config
-import traceback
-import solver.algorithms.algorithms as algorithms
+import util.algorithms as algorithms
 
 class ML_Solver(BaseSolver):
     def __init__(self,
@@ -109,8 +105,8 @@ class ML_Solver(BaseSolver):
             brick_layout = load_bricklayout(os.path.join(data_path, rand_data), self.complete_graph)
 
             # solve by greedy tree search
-            output_solution, score, predict_order = algorithms.solve_by_probablistic_greedy(self, brick_layout)
-            brick_layout.predict = output_solution
+            predict, score, predict_order = algorithms.solve_by_probablistic_greedy(self, brick_layout)
+            brick_layout.predict = predict
             brick_layout.predict_order = predict_order
             brick_layout.predict_probs = self.predict(brick_layout)
 

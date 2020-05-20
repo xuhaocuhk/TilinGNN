@@ -96,7 +96,7 @@ class BrickLayout():
         super_contour_exteriors, super_contour_interiors = BrickLayout.get_polygon_plot_attr(super_contour_poly, style='lightblue') \
                                                                if do_show_super_contour else ([], [])
         # show selected tiles
-        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute("blue_trans") for i in
+        selected_tiles = [self.complete_graph.tiles[self.inverse_index[i]].get_plot_attribute("yellow") for i in
                                range(len(tiles)) if tiles[i] == 1]
 
 

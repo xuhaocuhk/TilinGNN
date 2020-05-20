@@ -12,7 +12,7 @@ eps = 1e-7
 class Losses:
     # evaluate loss for a given data set
     @staticmethod
-    def evaluate_loss(network, data_set_loader):
+    def cal_avg_loss(network, data_set_loader):
         losses = []
         avg_collision_probs_list = []
         filled_area_list = []
