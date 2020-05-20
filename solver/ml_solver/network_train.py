@@ -12,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
     MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
-    debugger = MyDebugger(f"training_{config.experiment_id}_{config.LOSSES_NAME}", fix_rand_seed = config.rand_seed, save_print_to_file=False)
+    debugger = MyDebugger(f"training_{config.experiment_id}", fix_rand_seed = config.rand_seed, save_print_to_file=False)
     plotter = Plotter()
     data_env = config.environment
     data_env.load_complete_graph(config.complete_graph_size)
