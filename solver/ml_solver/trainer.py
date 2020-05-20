@@ -80,7 +80,7 @@ class Trainer():
                     optimizer.zero_grad()
                     train_loss, *_ = Losses.calculate_unsupervised_loss(probs, data.x, data.collide_edge_index,
                                                                                     adj_edges_index=data.edge_index,
-                                                                                    adj_edge_lengths=data.edge_features[:,1])
+                                                                                    adj_edge_features=data.edge_features)
                     ## add diversity loss by cross entropy
                     train_loss = train_loss + config.DIVERSITY_WEIGHT * Losses._calculate_pairwise_cross_entropy(probs)
                     train_loss.backward()
@@ -91,38 +91,25 @@ class Trainer():
 
             self.network.train()
             torch.cuda.empty_cache()
-            loss_train_tmode, *_ = Losses.evaluate_loss(self.network, loader_train, training_experiment = False)
-            print(f"epoch {i}: training loss with training mode: {loss_train_tmode}", flush=True)
-            loss_test_tmode, avg_collision_probs, avg_filled_area, avg_align_length  = Losses.evaluate_loss(self.network, loader_test, training_experiment = config.training_experiment)
-            print(f"epoch {i}: testing loss with training mode: {loss_test_tmode}", flush=True)
-
-
-            ####################### Append text to statistic #################################
-            testing_loss_path = self.debugger.file_path('testing_loss.txt')
-            append_text_to_file(testing_loss_path, f'{i},{loss_test_tmode}\n')
-
-            if config.training_experiment:
-                overlap_metric_path = self.debugger.file_path('overlap_metric.txt')
-                append_text_to_file(overlap_metric_path, f'{i},{avg_collision_probs}\n')
-                coverage_metric_path = self.debugger.file_path('coverage_metric.txt')
-                append_text_to_file(coverage_metric_path, f'{i},{avg_filled_area}\n')
-                align_length_metric_path = self.debugger.file_path('alignment_metric.txt')
-                append_text_to_file(align_length_metric_path, f'{i},{avg_align_length}\n')
+            loss_train, *_ = Losses.evaluate_loss(self.network, loader_train)
+            print(f"epoch {i}: training loss: {loss_train}", flush=True)
+            loss_test, avg_collision_probs, avg_filled_area, avg_align_length  = Losses.evaluate_loss(self.network, loader_test)
+            print(f"epoch {i}: testing loss: {loss_test}", flush=True)
 
 
             ############# result debugging #############
-            if (loss_test_tmode < min_test_loss or i % model_saving_epoch == 0) or config.training_experiment:
-                if loss_test_tmode < min_test_loss:
-                    min_test_loss = loss_test_tmode
+            if (loss_test < min_test_loss or i % model_saving_epoch == 0):
+                if loss_test < min_test_loss:
+                    min_test_loss = loss_test
                 torch.cuda.empty_cache()
                 ############# network testing #############
                 self.network.train()
 
                 print(f"model save at epoch {i}")
-                torch.save(self.network, os.path.join(self.model_save_path, f'model_{i}_{loss_test_tmode}.pth'))
-                torch.save(optimizer.state_dict(), os.path.join(self.model_save_path, f'optimizer_{i}_{loss_test_tmode}.pth'))
+                torch.save(self.network, os.path.join(self.model_save_path, f'model_{i}_{loss_test}.pth'))
+                torch.save(optimizer.state_dict(), os.path.join(self.model_save_path, f'optimizer_{i}_{loss_test}.pth'))
 
-                ml_solver.load_saved_network(os.path.join(self.model_save_path, f'model_{i}_{loss_test_tmode}.pth'), evaluation=False)
+                ml_solver.load_saved_network(os.path.join(self.model_save_path, f'model_{i}_{loss_test}.pth'))
 
                 torch.cuda.empty_cache()
 

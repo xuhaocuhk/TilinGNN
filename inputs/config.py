@@ -13,7 +13,7 @@ env_name = '30-60-90'
 ################### DATA SET CONFIGURATION ###################
 # format: "tile set name : (mirror all tiles?, size of the superset, number of training data)"
 env_attribute_dict = {
-    '30-60-90'             : (True,  9, 10),
+    '30-60-90'             : (True,  9, 12000),
     '30-60-90+equilateral' : (True,  9, 12000),
     '30-60-90+rectangle'   : (True,  7, 12000),
     '45-45-90+rectangle'   : (False, 9,7000),

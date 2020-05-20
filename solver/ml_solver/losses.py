@@ -12,7 +12,7 @@ eps = 1e-7
 class Losses:
     # evaluate loss for a given data set
     @staticmethod
-    def evaluate_loss(network, data_set_loader, training_experiment=False):
+    def evaluate_loss(network, data_set_loader):
         losses = []
         avg_collision_probs_list = []
         filled_area_list = []
@@ -34,20 +34,7 @@ class Losses:
 
                 loss, min_index, _ = Losses.calculate_unsupervised_loss(probs, data.x, data.collide_edge_index,
                                                                         adj_edges_index=data.edge_index,
-                                                                        adj_edge_lengths=data.edge_features[:, 1])
-
-                if training_experiment:
-                    prob_selected = probs[:, min_index]
-                    avg_collision_probs, filled_area, avg_align_length = Losses.get_statistics_for_prediction(
-                        predict=prob_selected,
-                        x=data.x,
-                        adj_edge_index=data.edge_index,
-                        adj_edge_features=data.edge_features,
-                        collide_edge_index=data.collide_edge_index
-                    )
-                    avg_collision_probs_list.append(avg_collision_probs.detach().cpu().numpy())
-                    filled_area_list.append(filled_area.detach().cpu().numpy())
-                    avg_align_length_list.append(avg_align_length.detach().cpu().numpy())
+                                                                        adj_edge_features=data.edge_features)
 
                 losses.append(loss.detach().cpu().numpy())
             except:
@@ -73,7 +60,7 @@ class Losses:
 
 
     @staticmethod
-    def calculate_unsupervised_loss(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_feature):
+    def calculate_unsupervised_loss(probs, node_feature, collide_edge_index, adj_edges_index, adj_edge_features):
         # start time
         start_time = time.time()
         N = probs.shape[0]  # number of nodes
@@ -108,7 +95,7 @@ class Losses:
 
             ########### edge length loss
             if E_adj > 0:
-                adj_edge_lengths = adj_edge_feature[:, 1]
+                adj_edge_lengths = adj_edge_features[:, 1]
 
                 first_index = adj_edges_index[0, :]
                 first_prob = torch.gather(solution_prob, dim=0, index=first_index)

@@ -57,7 +57,7 @@ class ML_Solver(BaseSolver):
             brick_layout.get_data_as_torch_tensor(self.device)
 
         _, _, losses = Losses.calculate_unsupervised_loss(probs, x, collide_edge_index,
-                                                          adj_edges_index=adj_edge_index, adj_edge_feature=adj_edge_features)
+                                                          adj_edges_index=adj_edge_index, adj_edge_features=adj_edge_features)
         return losses
 
     def solve(self, brick_layout : BrickLayout):
@@ -93,21 +93,6 @@ class ML_Solver(BaseSolver):
         _, min_index, _ = Trainer.calculate_loss_unsupervise(probs, x, collide_edge_index, adj_edge_index, adj_edge_features)
         return min_index
 
-    def visualise_result_by_transparent_color(self, brick_layout : BrickLayout, plotter, save_dir):
-
-        probs = self.get_predict_probs(brick_layout)
-        # No picture can be drawn if out of memory
-        if probs is None:
-            return
-
-        ### get unsupervised loss for all mapping####
-        losses = self.get_unsupervised_losses_from_layout(brick_layout, probs)
-        min_index = np.argsort(losses)[0]
-        brick_layout.predict_probs = probs[:, min_index].view(-1).float().detach().cpu().numpy()
-
-        brick_layout.show_predict_prob(plotter, os.path.join(self.debugger.file_path(save_dir),
-                                                        f"data_prob_map_trans_predict.png"))
-
     def save_debug_info(self, plotter, sample_data, data_path, save_dir_root):
         if not os.path.isdir(self.debugger.file_path(save_dir_root)):
             os.makedirs(self.debugger.file_path(save_dir_root))
@@ -117,98 +102,32 @@ class ML_Solver(BaseSolver):
             rand_data = f"data_{data_idx}.pkl"
 
             # create folder for each sample
-            save_dir = os.path.join(self.debugger.file_path(save_dir_root), f"data_{i}")
-            obj_save_dir = os.path.join(save_dir, 'objs')
-            if not os.path.isdir(save_dir):
-                os.mkdir(save_dir)
+            save_dir = os.path.join(save_dir_root, f"data_{i}")
+            if not os.path.isdir(self.debugger.file_path(save_dir)):
+                os.mkdir(self.debugger.file_path(save_dir))
 
             brick_layout = load_bricklayout(os.path.join(data_path, rand_data), self.complete_graph)
 
             # solve by greedy tree search
-            results, _ = self.solve_by_algorithms(brick_layout, time_limit = config.search_time_limit, is_random_network= False, top_k = 1)
-            for idx, res in enumerate(results):
-                prediction, score, _ = res
-                brick_layout.predict = prediction
-                brick_layout.show_predict(plotter, os.path.join(self.debugger.file_path(save_dir),
-                                                                   f"tree_search_predict_greedy_{idx}_{score}.png"))
-                brick_layout.save_predict_as_objs(os.path.join(obj_save_dir,
-                                                               f"tree_search_predict_greedy_{idx}_objs"), file_name = "tile")
-                write_bricklayout(self.debugger.file_path(save_dir), f"tree_search_layout_{idx}_{score}.pkl", brick_layout, with_features = False)
+            output_solution, score, predict_order = algorithms.solve_by_probablistic_greedy(self, brick_layout)
+            brick_layout.predict = output_solution
+            brick_layout.predict_order = predict_order
+            brick_layout.predict_probs = self.predict(brick_layout)
 
-                ####### DEBUG FOR ASSERTION
-                reloaded_bricklayout = load_bricklayout(os.path.join(self.debugger.file_path(save_dir), f"tree_search_layout_{idx}_{score}.pkl"),
-                                 complete_graph = self.complete_graph)
-                BrickLayout.assert_equal_layout(reloaded_bricklayout, brick_layout)
+            brick_layout.show_predict(plotter, self.debugger, os.path.join(save_dir,
+                                                               f"greddy_predict_{score}.png"))
+            write_bricklayout(self.debugger.file_path(save_dir), f"greedy_layout_{score}.pkl", brick_layout, with_features = False)
 
-
-            # solve by tree search !!!! removed
-            # TREE_SEARCH_RESULT_CNT = 10
-            # results, _ = self.solve_by_treesearch_new(brick_layout, time_limit = config.search_time_limit, is_random_network=False, top_k = 4)
-            # results = results[:TREE_SEARCH_RESULT_CNT]
-            # for idx, res in enumerate(results):
-            #     prediction, score, _ = res
-            #     brick_layout.predict = prediction
-            #     brick_layout.show_predict(plotter, os.path.join(self.debugger.file_path(save_dir),
-            #                                                        f"tree_search_predict_top_4_{idx}_{score}.png"))
-            #     brick_layout.save_predict_as_objs(os.path.join(obj_save_dir,
-            #                                                    f"tree_search_predict_top_4_{idx}_objs"), file_name = "tile")
+            ####### DEBUG FOR ASSERTION
+            reloaded_bricklayout = load_bricklayout(os.path.join(self.debugger.file_path(save_dir), f"greedy_layout_{score}.pkl"),
+                             complete_graph = self.complete_graph)
+            BrickLayout.assert_equal_layout(reloaded_bricklayout, brick_layout)
 
             # visualize the result by all thershold and all map
-            self.visualise_result_by_transparent_color(brick_layout = brick_layout, plotter = plotter, save_dir = save_dir)
+            brick_layout.show_predict_prob(plotter, self.debugger, os.path.join(save_dir, f"network_prob_visualization.png"))
 
-            brick_layout.show_candidate_tiles(plotter, os.path.join(self.debugger.file_path(save_dir), f"supper_graph.png"))
-            brick_layout.show_super_contour(plotter,  os.path.join(self.debugger.file_path(save_dir), f"super_contour.png"))
-
-    def fine_tune_on_one_data(self, brick_layout : BrickLayout, plotter):
-
-        fine_tune_times = 300
-        ##### OPTIMIZER ####
-        optimizer = torch.optim.Adam(self.network.parameters(), lr=config.learning_rate)
-
-        ##### DATA ######
-        x, adj_edge_index, adj_edge_features, collide_edge_index, *_ = to_torch_tensor(device = self.device,
-                        node_feature = brick_layout.node_feature,
-                        align_edge_index = brick_layout.align_edge_index,
-                        align_edge_features = brick_layout.align_edge_features,
-                        collide_edge_index = brick_layout.collide_edge_index,
-                        collide_edge_features = brick_layout.collide_edge_features,
-                        ground_truth = np.array([]))
-
-        ########### Training #####################
-        before_fine_tune_result_path = brick_layout.debugger.file_path('before_fine_tune')
-        if not os.path.isdir(before_fine_tune_result_path):
-            os.mkdir(before_fine_tune_result_path)
-        self.visualise_result_by_transparent_color(brick_layout=brick_layout, plotter = plotter, save_dir= before_fine_tune_result_path)
-
-        for i in range(fine_tune_times):
-            probs = get_network_prediction(network=self.network,
-                                           x=x,
-                                           adj_e_index=adj_edge_index,
-                                           adj_e_features=adj_edge_features,
-                                           col_e_idx= collide_edge_index,
-                                           col_e_features=None)
-            if probs is None:
-                continue
-            try:
-                optimizer.zero_grad()
-
-                unsupervise_train_loss, *_ = Losses.calculate_unsupervised_loss(probs, x,
-                                                                                collide_edge_index,
-                                                                                adj_edges_index= adj_edge_index,
-                                                                                adj_edge_lengths= adj_edge_features[:, 1])
-                unsupervise_train_loss.backward()
-                optimizer.step()
-            except:
-                print(traceback.format_exc())
-                continue
-            print (f"loss after training for {i} times : {unsupervise_train_loss}")
-
-            if i % 20 == 0:
-                fine_tune_path = brick_layout.debugger.file_path(f'fine_tune_{i}')
-                if not os.path.isdir(fine_tune_path):
-                    os.mkdir(fine_tune_path)
-                self.visualise_result_by_transparent_color(brick_layout=brick_layout, plotter=plotter,
-                                                           save_dir=fine_tune_path, top_k=4)
+            brick_layout.show_candidate_tiles(plotter, self.debugger, os.path.join(save_dir, f"superset.png"))
+            brick_layout.show_super_contour(plotter, self.debugger, os.path.join(save_dir, f"super_contour.png"))
 
 
     def load_saved_network(self, net_path):
