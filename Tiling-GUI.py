@@ -24,11 +24,6 @@ import pickle
 from shapely.affinity import translate, scale, rotate
 
 SIMPLIFY_RATIO = 5e-3
-default_trial_times = 1
-default_padding_ratio = 0.45
-default_angle = 15.0
-default_x_delta = 0.2
-default_y_delta = 0.0
 scale_ratio = 0.02
 rotation_angle_ratio = 3
 translation_ratio = 0.05
@@ -136,18 +131,13 @@ class DrawerWidgets(QMainWindow):
             elif event.key() == ord('S'):
                 if self.current_brick_layout is not None:
                     self.current_solution_layout = self.solve_Brick_Layout(self.current_brick_layout)
-            elif event.key() == ord('2'):
-                if self.current_polygon_exterior is not None:
-                    self.compute_Brick_Layout()
-                    self.current_solution_layout = self.solve_Brick_Layout(self.current_brick_layout, default_trial_times)
             elif event.key() == ord('R'):
                 self.current_polygon_exterior.clear()
                 self.current_polygon_interiors.clear()
+                self.current_brick_layout = None
                 self.repaint()
             elif event.key() == ord('O'):
                 self.open_silhouette_files()
-            elif event.key() == ord('1'):
-                self.open_silhouette_files(default_padding_ratio, default_angle, default_x_delta, default_y_delta)
             elif event.key() == ord('L'):
                 self.load_brick_layout()
             elif event.key() == ord('M'):
@@ -155,15 +145,10 @@ class DrawerWidgets(QMainWindow):
                     self.mouse_mode = 'EDIT'
                 elif self.mouse_mode == 'EDIT':
                     self.mouse_mode = 'DRAW'
-            elif event.key() == ord('3'):
-                self.current_best_solution = None
-                self.repaint()
             elif event.key() == ord('Z'):
                 self.affline_transform(scale_rate = scale_ratio)
             elif event.key() == ord('X'):
                 self.affline_transform(scale_rate = - scale_ratio)
-            elif event.key() == ord('C'):
-                self.load_brick_layout_with_prediction()
             elif event.key() == ord('='):
                 self.affline_transform(rotation_angle = rotation_angle_ratio)
             elif event.key() == ord('-'):
@@ -176,8 +161,6 @@ class DrawerWidgets(QMainWindow):
                 self.affline_transform(translation_x_rate = - translation_ratio)
             elif event.key() == Qt.Key_Right:
                 self.affline_transform(translation_x_rate = translation_ratio)
-            elif event.key() == ord('`'):
-                self.load_target_polygon()
 
             event.accept()
         else:
@@ -537,28 +520,30 @@ class DrawerWidgets(QMainWindow):
             self.repaint()
             print(f"{filename} loaded!")
 
-    def load_brick_layout_with_prediction(self):
-        filename, filetype = QFileDialog.getOpenFileName(self, 'Open File')
-        if os.path.exists(filename):
-            self.current_best_solution = load_bricklayout(filename, self.complete_graph)
-            print(f"{filename} loaded!")
-            self.repaint()
-
-    def load_target_polygon(self):
-        file_path, filetype = QFileDialog.getOpenFileName(self, 'Open File')
-        if os.path.exists(file_path):
-            target_polygon = pickle.load(open(file_path, "rb"))
-            self.current_polygon_exterior = list(np.array(target_polygon.exterior.coords))
-            self.current_polygon_interiors = list(map(lambda interior : list(np.array(interior)), target_polygon.interiors))
-            self.repaint()
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
 '''
 Instructions here
+Keys:
+E : cropping the superset according to current shape
+S : solve the tiling problem by TilinGNN
+R : clear the draw shape and solution
+O : open a shape file in txt format
+L : load a precomputed layout file
+M : change mode (Edit mode <-> Draw mode)
+Z/X : scale up/ down
+-/= : rotate clockwise/anti-clockwise
+UP/DOWN/LEFT/RIGHT : translate up/down/left/right
+
+Mouse:
+Edit mode:
+right click : add a new point to the location
+Draw mode:
+right drag an existing point : change the location of that point
 '''
+
 if __name__ == "__main__":
     MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
     debugger = MyDebugger("brick_layout_test", fix_rand_seed=0, save_print_to_file = False)
