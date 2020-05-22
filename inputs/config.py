@@ -56,25 +56,7 @@ debug_data_num = 5
 debug_base_folder = ".."
 experiment_id = 2000 # unique ID to identify an experiment
 
-#################### EVALUATION ##################
-start_angle = 0.0
-end_angle = 30
-num_of_angle = 2
-movement_delta_ratio = [0]
-margin_padding_ratios = [0.5]
-evaluation_search_time_limit = 200
-top_k = 1
-max_axis = 160
-plot_target = True
-plot_sequence = False
+#################### TESTING ##################
 output_tree_search_layout = False
-save_objs = False
-save_tiling_pictures = True
-save_layout = True
-trial_times = 20
-detect_holes = True
 silhouette_path = "/home/edwardhui/data/silhouette/selected_v2"
 network_path = f"./pre-trained_models/{env_name}.pth"
-start_file_name = None
-sort_by_coverage = False
-sort_keep_num = 10
