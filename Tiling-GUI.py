@@ -546,7 +546,7 @@ right drag an existing point : change the location of that point
 
 if __name__ == "__main__":
     MyDebugger.pre_fix = os.path.join(MyDebugger.pre_fix, "debug")
-    debugger = MyDebugger("brick_layout_test", fix_rand_seed=0, save_print_to_file = False)
+    debugger = MyDebugger("UI_interface", fix_rand_seed=0, save_print_to_file = False)
     plotter = Plotter()
     data_env = config.environment
     data_env.load_complete_graph(config.complete_graph_size)
