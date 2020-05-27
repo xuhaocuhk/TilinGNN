@@ -545,8 +545,8 @@ right drag an existing point : change the location of that point
 
 Procedure for solving drawing shapes:
 1. Change to drawing mode by Key M
-2. Transform by the shapes (Z/X, -/=, UP/DOWN/LEFT/RIGHT) or edit the shapes in Edit mode
-3. Draw the shape that you like
+2. Draw the shape that you like
+3. Transform by the shapes (Z/X, -/=, UP/DOWN/LEFT/RIGHT) or edit the shapes in Edit mode
 4. Crop superset by Key E
 5. Solve the problem by Key S (with number of trials)
 
