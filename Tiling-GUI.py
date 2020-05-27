@@ -542,6 +542,19 @@ Edit mode:
 right click : add a new point to the location
 Draw mode:
 right drag an existing point : change the location of that point
+
+Procedure for solving drawing shapes:
+1. Change to drawing mode by Key M
+2. Transform by the shapes (Z/X, -/=, UP/DOWN/LEFT/RIGHT) or edit the shapes in Edit mode
+3. Draw the shape that you like
+4. Crop superset by Key E
+5. Solve the problem by Key S (with number of trials)
+
+Procedure for solving silhouette shapes:
+1. Load the txt file in the ./silhouette folder by Key O
+2. Transform by the shapes (Z/X, -/=, UP/DOWN/LEFT/RIGHT) or edit the shapes in Edit mode
+3. Crop superset by Key E
+4. Solve the problem by Key S (with number of trials)
 '''
 
 if __name__ == "__main__":
