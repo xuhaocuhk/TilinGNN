@@ -539,9 +539,9 @@ UP/DOWN/LEFT/RIGHT : translate up/down/left/right
 
 Mouse:
 Edit mode:
-right click : add a new point to the location
+left click : add a new point to the location
 Draw mode:
-right drag an existing point : change the location of that point
+left drag an existing point : change the location of that point
 
 Procedure for solving drawing shapes:
 1. Change to drawing mode by Key M
