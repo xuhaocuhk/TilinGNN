@@ -1,5 +1,3 @@
-### We are refactoring our code and adding documentation, to improve the clarification. Please wait for a few more days :)
-
 # [TilinGNN: Learning to Tile with Self-Supervised Graph Neural Network (SIGGRAPH 2020)](https://appsrv.cse.cuhk.edu.hk/~haoxu/projects/TilinGnn/index.html)
 ![Teaser Figure](./images/teaser.png)
 
