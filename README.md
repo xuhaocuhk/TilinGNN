@@ -26,3 +26,7 @@ We provide the following entry points for researchers to try our project:
     
 #### Note
 In this program, we have a global configuration file `inputs/config.py`, which plays a very important role to control the behavior of the programs, such as which tile set you want to work with, the stored location of the trained networks, or how many training data you will create, etc.   
+
+#### Keep Improving
+If you met problems, or have questions on this project, don't hesitate to contact us at 
+[haoxu@cse.cuhk.edu.hk] or [a03090@gmail.com]
