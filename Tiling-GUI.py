@@ -22,6 +22,7 @@ import traceback
 import itertools
 import pickle
 from shapely.affinity import translate, scale, rotate
+from graph_networks.networks.TilinGNN import TilinGNN
 
 SIMPLIFY_RATIO = 5e-3
 scale_ratio = 0.02
@@ -564,7 +565,9 @@ if __name__ == "__main__":
     data_env = config.environment
     data_env.load_complete_graph(config.complete_graph_size)
 
-    solver = ML_Solver(debugger, device, data_env.complete_graph, None, num_prob_maps = 1)
+    network = TilinGNN(adj_edge_features_dim=data_env.complete_graph.total_feature_dim,
+                       network_depth=config.network_depth, network_width=config.network_width).to(device)
+    solver = ML_Solver(debugger, device, data_env.complete_graph, network, num_prob_maps = 1)
     solver.load_saved_network(config.network_path)
 
     app = QApplication(sys.argv)

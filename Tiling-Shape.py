@@ -13,6 +13,7 @@ import torch.multiprocessing as mp
 from util.data_util import load_bricklayout, write_bricklayout
 from shapely.geometry import Polygon
 from tiling.brick_layout import BrickLayout
+from graph_networks.networks.TilinGNN import TilinGNN
 
 EPS = 1e-5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,7 +31,10 @@ def tiling_a_region():
     environment.load_complete_graph(config.complete_graph_size)
     environment.complete_graph.show_complete_super_graph(plotter, debugger, "complete_graph.png")
 
-    solver = ML_Solver(debugger, device, environment.complete_graph, None, num_prob_maps= 1)
+    network = TilinGNN(adj_edge_features_dim=environment.complete_graph.total_feature_dim,
+                       network_depth=config.network_depth, network_width=config.network_width).to(device)
+
+    solver = ML_Solver(debugger, device, environment.complete_graph, network, num_prob_maps= 1)
     solver.load_saved_network(config.network_path)
 
     ##### select a silhouette as a tiling region

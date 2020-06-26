@@ -127,7 +127,7 @@ class ML_Solver(BaseSolver):
 
 
     def load_saved_network(self, net_path):
-        self.network.load_state_dict(net_path, map_location = self.device)
+        self.network.load_state_dict(torch.load(net_path))
         self.network.train()
 
 def get_best_prob_map(ml_solver, prob_tensor, temp_layout):
