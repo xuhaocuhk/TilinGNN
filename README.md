@@ -7,12 +7,12 @@ The goal of our research problem is illustrated below: given a tile set (a) and 
 
 ### Dependencies:
 This project is implemented in Python 3.7. You need to install the following packages to run our program. 
-- [Pytorch](https://pytorch.org/get-started/locally/)[Compulsory, to manipulate the tensors on GUP, and to build up the networks.]
-- [Pytorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html)[Compulsory, to build up the graph networks.]
-- [Numpy](https://pypi.org/project/numpy/) [Compulsory, to manipulate the arrays and their computations.]
-- [Shapely](https://pypi.org/project/Shapely/) [Compulsory, for geometric computations such as collision detection.]
-- [PyQT5](https://pypi.org/project/PyQt5/) [Compulsory, for rendering results, and display UI interface.]
-- [Minizinc](https://pypi.org/project/minizinc/) [Optional, install it only when you use IP solvers]
+- [Pytorch](https://pytorch.org/get-started/locally/) (tested with v1.2.0): compulsory, to manipulate the tensors on GUP, and to build up the networks.
+- [Pytorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html) (tested with v1.3.2): compulsory, to build up the graph networks.
+- [Numpy](https://pypi.org/project/numpy/): compulsory, to manipulate the arrays and their computations.
+- [Shapely](https://pypi.org/project/Shapely/) (tested with v1.6.4): compulsory, for geometric computations such as collision detection.
+- [PyQT5](https://pypi.org/project/PyQt5/): compulsory, for rendering results, and display UI interface.
+- [Minizinc](https://pypi.org/project/minizinc/): optional, install it only when you use IP solvers
 
 ### Usage
 We provide the following entry points for researchers to try our project:
@@ -28,5 +28,5 @@ We provide the following entry points for researchers to try our project:
 In this program, we have a global configuration file `inputs/config.py`, which plays a very important role to control the behavior of the programs, such as which tile set you want to work with, the stored location of the trained networks, or how many training data you will create, etc.   
 
 #### Keep Improving
-If you met problems, or have questions on this project, don't hesitate to contact us at 
+If you met problems or any question on this project, contact us at 
 [haoxu@cse.cuhk.edu.hk] or [a03090@gmail.com]
