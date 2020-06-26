@@ -103,7 +103,7 @@ class Trainer():
                 # self.network.train()
 
 
-                torch.save(self.network, os.path.join(self.model_save_path, f'model_{i}_{loss_test}.pth'))
+                torch.save(self.network.state_dict(), os.path.join(self.model_save_path, f'model_{i}_{loss_test}.pth'))
                 torch.save(optimizer.state_dict(), os.path.join(self.model_save_path, f'optimizer_{i}_{loss_test}.pth'))
                 print(f"model saved at epoch {i}")
 

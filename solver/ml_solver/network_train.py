@@ -18,11 +18,10 @@ if __name__ == "__main__":
     data_env.load_complete_graph(config.complete_graph_size)
 
     #### Network
-    network = None
-    if config.new_training:
-        network = TilinGNN(adj_edge_features_dim=data_env.complete_graph.total_feature_dim, network_depth= config.network_depth, network_width=config.network_width).to(device)
-    else:
-        network = torch.load(config.load_trained_model_path, map_location=device)
+    network = TilinGNN(adj_edge_features_dim=data_env.complete_graph.total_feature_dim, network_depth= config.network_depth, network_width=config.network_width).to(device)
+
+    ## solver
+    ml_solver = ML_Solver(debugger, device, data_env.complete_graph, network, num_prob_maps=1)
 
     #### Optimizer
     optimizer = torch.optim.Adam(network.parameters(), lr=config.learning_rate)
@@ -30,7 +29,8 @@ if __name__ == "__main__":
         optimizer_stae_dict = torch.load("put your optimizer path here")
         optimizer.load_state_dict(optimizer_stae_dict)
 
-    ml_solver = ML_Solver(debugger, device, data_env.complete_graph, network, num_prob_maps=1)
+    if not config.new_training:
+        ml_solver.load_saved_network(config.load_trained_model_path)
 
     trainer = Trainer(debugger, plotter, device, ml_solver.network, data_path=config.dataset_path)
 
