@@ -46,7 +46,6 @@ class DrawerWidgets(QMainWindow):
         self.initUI()
         self.app = app
 
-
         ########################## PENS #############################
         self.grid_pen = QPen(QColor(120, 120, 120, 255), 1)
 

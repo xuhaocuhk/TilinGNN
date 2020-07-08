@@ -1,7 +1,7 @@
 import os
 from util.debugger import MyDebugger
 from interfaces.qt_plot import Plotter
-from tiling.tile_graph import TileGraph, form_complete_graph, get_all_tiles
+from tiling.tile_graph import TileGraph, find_candidate_tile_locations, get_all_tiles
 import tiling.tile_factory as factory
 from inputs import config
 from tiling.brick_layout import BrickLayout
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         file_name = "complete_graph_ring{}.pkl".format(num_rings)
 
         # generate complete brick_layouts
-        tiles = form_complete_graph(num_rings=num_rings, base_tile=data_env.proto_tiles[0], align_tiles=data_env.proto_tiles)
+        tiles = find_candidate_tile_locations(num_rings=num_rings, base_tile=data_env.proto_tiles[0], align_tiles=data_env.proto_tiles)
         
         print(f"{len(tiles)}  tiles created!")
         graph = TileGraph(data_env.tile_count, tiles = tiles, one_hot = True, proto_tiles= data_env.proto_tiles)

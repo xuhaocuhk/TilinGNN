@@ -16,7 +16,7 @@ class Environment(object):
         self.base_path = base_path
         tiles_dir = os.path.join(base_path, 'tiles')
 
-        assert os.path.isdir(base_path)
+        assert os.path.isdir(base_path), "Please set the working directory as the root directory of this project."
         assert os.path.isdir(tiles_dir)
 
         self.tiles_name = glob.glob(os.path.join(os.path.join(tiles_dir), "*.txt"))

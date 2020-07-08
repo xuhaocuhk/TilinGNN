@@ -3,8 +3,8 @@ from inputs.env import Environment
 import math
 
 ################### DATA SET SELECTION ###################
-env_name = '30-60-90'
-# env_name = '30-60-90+equilateral'
+# env_name = '30-60-90'
+env_name = '30-60-90+equilateral'
 # env_name = '30-60-90+rectangle'
 # env_name = "polyiamond-3"
 # env_name = "45-45-90+rectangle"

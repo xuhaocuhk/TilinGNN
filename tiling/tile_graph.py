@@ -37,7 +37,7 @@ def get_all_tiles(base_tile: Tile, align_tile: Tile, integer_align):
                     align_tags.append(align_tag)
     return result_tiles, align_tags
 
-def form_complete_graph(num_rings, base_tile: Tile, align_tiles: list, integer_align=True):
+def find_candidate_tile_locations(num_rings, base_tile: Tile, align_tiles: list, integer_align=True):
     # the resulting tiles
     result_tiles = [base_tile]
     # the tiles in the last ring
